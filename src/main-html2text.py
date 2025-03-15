@@ -11,6 +11,11 @@ import os
 from rich.console import Console
 from rich.logging import RichHandler
 import logging
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
+from webdriver_manager.chrome import ChromeDriverManager
+
 from rich.traceback import install
 install()
 
@@ -26,8 +31,8 @@ logging.basicConfig(
 
 logger = logging.getLogger("rich")
 
-class WebScraper:
-    def __init__(self, output_dir="scraped_data"):
+class WebClient:
+    def __init__(self):
         user_agents = [
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
             "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
@@ -36,14 +41,15 @@ class WebScraper:
         self.headers = {
             'User-Agent': random.choice(user_agents)
         }
+    def get_response(self, url):
+        """Extract relevant content from a URL"""
+        response = requests.get(url, headers=self.headers, timeout=10)
+        response.raise_for_status()
+        return response
 
-        self.output_dir = output_dir
-        os.makedirs(output_dir, exist_ok=True)
-        
-    def extract_domain(self, url):
-        """Extract domain name from URL"""
-        parsed_uri = urlparse(url)
-        return parsed_uri.netloc
+    
+class HtmlCleaner:
+
         
     def clean_text(self, text):
         """Clean extracted text"""
@@ -82,7 +88,6 @@ class WebScraper:
             description = meta_desc['content']
         
         return title, description
-    
     def extract_main_content(self, soup):
         """Extracts main content from a webpage and converts it into Markdown"""
         
@@ -100,15 +105,14 @@ class WebScraper:
         markdown_content = markdown_converter.handle(str(main_container))
 
         return markdown_content.strip()
+    
 
 
-    def get_content(self, url):
+
+    def extract_content(self, html_response):
         """Extract relevant content from a URL"""
-        response = requests.get(url, headers=self.headers, timeout=10)
-        response.raise_for_status()
-        
-        soup = BeautifulSoup(response.content, 'html.parser')
 
+        soup = BeautifulSoup(html_response.content, 'html.parser')
         # Clean content
         soup = self.clean_content(soup)
 
@@ -122,8 +126,6 @@ class WebScraper:
         
         
         return {
-            'url': url,
-            'domain': self.extract_domain(url),
             'title': title,
             'description': description,
             'main_content': main_content,
@@ -132,6 +134,22 @@ class WebScraper:
         }
             
 
+class WebScraper:
+    def __init__(self, output_dir="scraped_data"):
+        self.web_client = WebClient()
+        self.html_cleaner = HtmlCleaner()
+        self.output_dir = output_dir
+        os.makedirs(output_dir, exist_ok=True)
+        
+    
+
+
+
+
+    def extract_domain(self, url):
+        """Extract domain name from URL"""
+        parsed_uri = urlparse(url)
+        return parsed_uri.netloc
     
     def scrape_urls(self, urls, delay=2):
         """Scrape a list of URLs with a delay between requests"""
@@ -140,11 +158,8 @@ class WebScraper:
         for url in urls:
             logger.info(f"Scraping: {url}")
             try:
-                data = self.get_content(url)
-        
-                
-
-                
+                response = self.web_client.get_response(url)
+                data = self.html_cleaner.extract_content(response)       
                 # Save individual result as text file
                 if data['main_content']:
                     # Add data to results
@@ -182,9 +197,6 @@ class WebScraper:
         console.print(f"Scraping completed. Data saved to {csv_path}")
 
         return results
-
-def links_str_to_list(links_str):
-    return [link.strip() for link in links_str.split('\n') if link.strip()]
 
 
 

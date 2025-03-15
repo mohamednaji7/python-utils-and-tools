@@ -187,11 +187,6 @@ class WebScraper:
 
         return results
 
-def links_str_to_list(links_str):
-    return [link.strip() for link in links_str.split('\n') if link.strip()]
-
-
-
 
 if __name__ == "__main__":
     main_dir = "main-tags-md-output/scrapped_data"
