@@ -23,7 +23,7 @@ install()
 console = Console()
 
 logging.basicConfig(
-    level=logging.DEBUG,
+    level=logging.INFO,
     format="%(message)s",
     datefmt="[%X]",
     handlers=[RichHandler(console=console)]
@@ -32,7 +32,9 @@ logging.basicConfig(
 logger = logging.getLogger("rich")
 
 class WebClient:
-    def __init__(self):
+
+    def get_soup_response(self, url):
+        """get HTML response of an URL"""
         user_agents = [
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
             "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
@@ -41,13 +43,31 @@ class WebClient:
         self.headers = {
             'User-Agent': random.choice(user_agents)
         }
-    def get_response(self, url):
-        """Extract relevant content from a URL"""
         response = requests.get(url, headers=self.headers, timeout=10)
         response.raise_for_status()
-        return response
 
-    
+        soup = BeautifulSoup(response.content, 'html.parser')
+        return soup
+
+    def get_rendered_soup_response(self, url):
+        """get rendered HTML response of an URL"""
+
+        options = Options()
+        options.add_argument("--headless")  # Run in headless mode
+        options.add_argument("--disable-blink-features=AutomationControlled")
+
+        driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+        driver.get(url)
+
+        page_source = driver.page_source  # Get rendered HTML
+        driver.quit()
+
+        soup = BeautifulSoup(page_source, "html.parser")
+        logger.log(logging.DEBUG, soup.prettify())
+
+        return soup
+
+
 class HtmlCleaner:
 
         
@@ -109,10 +129,9 @@ class HtmlCleaner:
 
 
 
-    def extract_content(self, html_response):
+    def extract_content(self, soup):
         """Extract relevant content from a URL"""
 
-        soup = BeautifulSoup(html_response.content, 'html.parser')
         # Clean content
         soup = self.clean_content(soup)
 
@@ -158,8 +177,9 @@ class WebScraper:
         for url in urls:
             logger.info(f"Scraping: {url}")
             try:
-                response = self.web_client.get_response(url)
-                data = self.html_cleaner.extract_content(response)       
+                # soup = self.web_client.get_soup_response(url)
+                soup = self.web_client.get_rendered_soup_response(url)
+                data = self.html_cleaner.extract_content(soup)       
                 # Save individual result as text file
                 if data['main_content']:
                     # Add data to results
