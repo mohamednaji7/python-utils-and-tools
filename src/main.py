@@ -255,14 +255,45 @@ class WebScraper:
             with open(json_path, 'r', encoding='utf-8') as f:
                 data = json.load(f)
                 results.extend(data)
-        with open(json_path, 'w', encoding='utf-8') as f:
-            json.dump(results, f, indent=2, ensure_ascii=False)
+            
+        save_json(json_path, results, 2)
 
         logger.info(f"Scraping completed. Data saved to {json_path}")
 
 
         return new_scraping_states, info
      
+def save_json(json_path, json_data, indent=4):
+    with open(json_path, 'w', encoding='utf-8') as f:
+        json.dump(json_data, f, indent=indent, ensure_ascii=False)
+
+def  save_summary(summary, main_dir):
+
+    json_summary_path = f"{main_dir}/summary.json"
+    
+    save_json(json_summary_path, summary, 2)
+    
+    logger.info(f"Summary saved to {json_summary_path}")
+    
+    
+    # Plot results
+    keys = list(summary.keys())
+    scraped = [summary[k]['scraped'] for k in keys]
+    failed = [summary[k]['failed'] for k in keys]
+    
+    plt.figure(figsize=(10, 5))
+    plt.bar(keys, scraped, color='green', label='Scraped')
+    plt.bar(keys, failed, color='red', bottom=scraped, label='Failed')
+    plt.xlabel("Categories")
+    plt.ylabel("Number of Links")
+    plt.title("Scraping Results")
+    plt.legend()
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    
+    plot_path = f"{main_dir}/scraping_results.png"
+    plt.savefig(plot_path)
+    logger.info(f"Plot saved to {plot_path}")
 
 def main():
     main_dir = "output/scraped_data"
@@ -307,43 +338,19 @@ def main():
                 "failed": len(urls_to_scrape) - sum(new_scraping_states),
             }
         except KeyboardInterrupt:
-            with open("input/urls.json", "w", encoding="utf-8") as f:
-                json.dump(urls_JSON, f, indent=4, ensure_ascii=False)  # ensure_ascii=False keeps Unicode characters
+            save_json("input/urls.json", summary)
             break
 
     # Save to a JSON file with indentation
-    with open("input/urls.json", "w", encoding="utf-8") as f:
-        json.dump(urls_JSON, f, indent=4, ensure_ascii=False)  # ensure_ascii=False keeps Unicode characters
-        
+    save_json("input/urls.json", summary)
+
     
         # print  time.time() - start_time
     logger.info(f"Total number of links: {total_number_of_urls}")
     logger.info(f"Total time: {(time.time() - start_time)/60:.2f}m")
-    json_summary_path = f"{main_dir}/summary.json"
-    with open(json_summary_path, 'w', encoding='utf-8') as f:
-        json.dump(summary, f, indent=2, ensure_ascii=False)
-    
-    logger.info(f"Summary saved to {json_summary_path}")
-    
-    
-    # Plot results
-    keys = list(summary.keys())
-    scraped = [summary[k]['scraped'] for k in keys]
-    failed = [summary[k]['failed'] for k in keys]
-    
-    plt.figure(figsize=(10, 5))
-    plt.bar(keys, scraped, color='green', label='Scraped')
-    plt.bar(keys, failed, color='red', bottom=scraped, label='Failed')
-    plt.xlabel("Categories")
-    plt.ylabel("Number of Links")
-    plt.title("Scraping Results")
-    plt.legend()
-    plt.xticks(rotation=45)
-    plt.tight_layout()
-    
-    plot_path = f"{main_dir}/scraping_results.png"
-    plt.savefig(plot_path)
-    logger.info(f"Plot saved to {plot_path}")
+
+    save_summary(summary, main_dir)
+
 
 if __name__ == "__main__":
     main()
