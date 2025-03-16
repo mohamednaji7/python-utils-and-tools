@@ -30,21 +30,7 @@ logger = logging.getLogger("rich")
 
 class WebClient:
 
-    def get_soup_response(self, url):
-        """get HTML response of an URL"""
-        user_agents = [
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-            "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-        ]
-        self.headers = {
-            'User-Agent': random.choice(user_agents)
-        }
-        response = requests.get(url, headers=self.headers, timeout=10)
-        response.raise_for_status()
 
-        soup = BeautifulSoup(response.content, 'html.parser')
-        return soup
 
     def get_rendered_soup_response(self, url):
         """get rendered HTML response of an URL"""
@@ -146,67 +132,64 @@ class HtmlCleaner:
         }
             
 
+import matplotlib.pyplot as plt
+
 class WebScraper:
-    def __init__(self, output_dir="scraped_data"):
+    def __init__(self, delay, processing_time, number_of_urls_to_scrape, output_dir="scraped_data"):
         self.web_client = WebClient()
         self.html_cleaner = HtmlCleaner()
         self.output_dir = output_dir
         os.makedirs(output_dir, exist_ok=True)
+        self.processing_time = processing_time
+        self.delay = delay
+        self.number_of_urls_to_scrape = number_of_urls_to_scrape
+        self.total_number_of_urls_to_scrape = number_of_urls_to_scrape
         
-    
-
-
-
-
     def extract_domain(self, url):
-        """Extract domain name from URL"""
         parsed_uri = urlparse(url)
         return parsed_uri.netloc
-    
-    def scrape_urls(self, urls, delay=2):
+
+    def scrape_urls(self, urls, scraping_states, subdir):
         """Scrape a list of URLs with a delay between requests"""
+        if subdir:
+            output_dir = f"{self.output_dir}/{subdir}"
+            os.makedirs(output_dir, exist_ok=True)
+        else:
+            output_dir = self.output_dir
         results = []
-        
-        for url in urls:
+        # for url in urls:
+        new_scraping_states = []
+        for url, state in zip(urls, scraping_states):
+            if state == True:
+                logger.info(f"Skipping...")
+                new_scraping_states.append(True)
+                continue
+            
+
             logger.info(f"Scraping: {url}")
+            logger.info(f"reaminig time: {self.processing_time*self.number_of_urls_to_scrape/60:.2f} minutes")
+            print(self.number_of_urls_to_scrape)
+            print(self.total_number_of_urls_to_scrape)
+            logger.info(f"url {-self.number_of_urls_to_scrape+self.total_number_of_urls_to_scrape}/{self.total_number_of_urls_to_scrape}")
+            self.number_of_urls_to_scrape -= 1
+            start_time = time.time()
             try:
+                # Be respectful with a delay between requests
+                time.sleep(self.delay)
+
                 # soup = self.web_client.get_soup_response(url)
                 soup = self.web_client.get_rendered_soup_response(url)
                 soup = self.html_cleaner.clean_content(soup)
                                 
                                 
-                # <DEBUGGING> --------------------------------------------------------
-                # print(soup)
-                # main_container = soup.find('main') or soup.find('article') or soup.find('body')
-                # if not main_container:
-                #     print(soup.prettify())
 
-                #     raise Exception("Could not find main content container or body")
-
-
-                # # print(main_container.prettify())
-                # # print('*'*300)
-                # print(main_container.text)
-                # print('*'*300)
-                # # Convert HTML to Markdown
-                # markdown_converter = html2text.HTML2Text()
-                # markdown_converter.ignore_links = True  # Set to True if you don't want links
-                # markdown_content = markdown_converter.handle(str(main_container))
-                # print(markdown_content)
-                # print('*'*300)
-
-
-                # print('main_container not None')
-                # break 
-                # # </ DEBUGGING> --------------------------------------------------------
-                
                 data = self.html_cleaner.extract_content(soup)       
                 # Save individual result as text file
                 if data['main_content']:
                     # Add data to results
                     results.append(data)
                     domain = self.extract_domain(url)
-                    filename = f"{self.output_dir}/{domain} - {data['title']}.txt"
+                    filename = f"{output_dir}/{domain} - {data['title']}.txt"
                     with open(filename, 'w', encoding='utf-8') as f:
                         f.write(f"URL: {url}\n")
                         # add the sraping time to the file
@@ -219,33 +202,85 @@ class WebScraper:
                     with open(filename.replace('.txt', '.md'), 'w', encoding='utf-8') as f:
                         f.write(data['main_content'])
                 
-                # Be respectful with a delay between requests
-                time.sleep(delay)
-            except requests.exceptions.RequestException as e:
-                logger.error(f"Request error {e}")
-                console.print_exception()
+                new_scraping_states.append(True)
+                
             except Exception as e:
                 logger.error(f"{e}")
                 console.print_exception()
-
+                new_scraping_states.append(False)
+            
+            # update the  processing time to averging 
+            processing_time = time.time() - start_time
+            self.processing_time = (self.processing_time + processing_time) / 2
 
         # Save to a JSON file with indentation
-        json_path = f"{self.output_dir}/scraped_data.json"
+        json_path = f"{output_dir}/scraped_data.json"
         with open(json_path, 'w', encoding='utf-8') as f:
             json.dump(results, f, indent=2, ensure_ascii=False)
         
-        console.print(f"Scraping completed. Data saved to {json_path}")
+        logger.info(f"Scraping completed. Data saved to {json_path}")
 
-        return results
+        return new_scraping_states
+     
 
-
-
-if __name__ == "__main__":
-    main_dir = "main-html2text-output/scrapped_data"
+def main():
+    main_dir = "output/scraped_data"
     os.makedirs(main_dir, exist_ok=True)
-
+    
     urls_JSON = json.load(open('input/urls.json'))
+    summary = {}
+    total_number_of_urls = sum([len(urls_JSON[key]['links']) for key in urls_JSON])
+    start_time = time.time()
+    delay = 2
+    scraper = WebScraper(delay, delay, total_number_of_urls, main_dir)
     for key in urls_JSON:
         urls_to_scrape = urls_JSON[key]['links']
-        scraper = WebScraper(output_dir=f"{main_dir}/{key}")
-        results = scraper.scrape_urls(urls_to_scrape, delay=3)
+        scraping_states = urls_JSON[key]['scraping_states']
+        
+        new_scraping_states = scraper.scrape_urls(urls_to_scrape, scraping_states, key)
+
+        
+        summary[key] = {
+            "total_links": len(urls_to_scrape),
+            "scraped": sum(new_scraping_states),
+            "failed": len(urls_to_scrape) - sum(new_scraping_states),
+        }
+        
+        urls_JSON[key]['scraping_states'] = new_scraping_states
+        
+    # Save to a JSON file with indentation
+    with open("input/urls.json", "w", encoding="utf-8") as f:
+        json.dump(urls_JSON, f, indent=4, ensure_ascii=False)  # ensure_ascii=False keeps Unicode characters
+        
+    
+        # print  time.time() - start_time
+    logger.info(f"Total number of links: {total_number_of_urls}")
+    logger.info(f"Total time: {(time.time() - start_time)/60:.2f}m")
+    json_summary_path = f"{main_dir}/summary.json"
+    with open(json_summary_path, 'w', encoding='utf-8') as f:
+        json.dump(summary, f, indent=2, ensure_ascii=False)
+    
+    logger.info(f"Summary saved to {json_summary_path}")
+    
+    
+    # Plot results
+    keys = list(summary.keys())
+    scraped = [summary[k]['scraped'] for k in keys]
+    failed = [summary[k]['failed'] for k in keys]
+    
+    plt.figure(figsize=(10, 5))
+    plt.bar(keys, scraped, color='green', label='Scraped')
+    plt.bar(keys, failed, color='red', bottom=scraped, label='Failed')
+    plt.xlabel("Categories")
+    plt.ylabel("Number of Links")
+    plt.title("Scraping Results")
+    plt.legend()
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    
+    plot_path = f"{main_dir}/scraping_results.png"
+    plt.savefig(plot_path)
+    logger.info(f"Plot saved to {plot_path}")
+
+if __name__ == "__main__":
+    main()
