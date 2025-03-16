@@ -12,6 +12,9 @@ from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
+import matplotlib.pyplot as plt
+import copy
+
 
 from rich.traceback import install
 install()
@@ -132,15 +135,14 @@ class HtmlCleaner:
         }
             
 
-import matplotlib.pyplot as plt
 
 class WebScraper:
-    def __init__(self, delay, processing_time, number_of_urls_to_scrape, output_dir="scraped_data"):
+    def __init__(self, delay, number_of_urls_to_scrape, output_dir="scraped_data"):
         self.web_client = WebClient()
         self.html_cleaner = HtmlCleaner()
         self.output_dir = output_dir
         os.makedirs(output_dir, exist_ok=True)
-        self.processing_time = processing_time
+        self.processing_time = 0.0
         self.delay = delay
         self.number_of_urls_to_scrape = number_of_urls_to_scrape
         self.total_number_of_urls_to_scrape = number_of_urls_to_scrape
@@ -169,12 +171,8 @@ class WebScraper:
                 continue
             
 
-            logger.info(f"Scraping: {url}")
-            logger.info(f"reaminig time: {self.processing_time*self.number_of_urls_to_scrape/60:.2f} minutes")
-            print(self.number_of_urls_to_scrape)
-            print(self.total_number_of_urls_to_scrape)
-            logger.info(f"url {-self.number_of_urls_to_scrape+self.total_number_of_urls_to_scrape}/{self.total_number_of_urls_to_scrape}")
-            self.number_of_urls_to_scrape -= 1
+            logger.info(f"Scraping url: {-self.number_of_urls_to_scrape+self.total_number_of_urls_to_scrape}/{self.total_number_of_urls_to_scrape} {url}")
+
             start_time = time.time()
             try:
                 # Be respectful with a delay between requests
@@ -182,24 +180,30 @@ class WebScraper:
 
                 # soup = self.web_client.get_soup_response(url)
                 soup = self.web_client.get_rendered_soup_response(url)
-                soup = self.html_cleaner.clean_content(soup)
                                 
-                                
+   
+                soup_copy = copy.deepcopy(soup)
 
-                data = self.html_cleaner.extract_content(soup)       
+                data = self.html_cleaner.extract_content(soup_copy)      
+
+                domain = self.extract_domain(url)
+                filename = f"{output_dir}/{domain} - {data['title']}.txt"
+
+                # Check if the filename makes an error in writing then change the file name
+                try:   
+                    with open(filename, 'w', encoding='utf-8') as f:
+                        f.write("Writing is working")
+                except:
+                    filename = f"{output_dir}/{domain} - {data['scrape_timestamp']}.txt"
+                
+                # save html file 
+                with open(filename.replace('.txt', '.html'), 'w', encoding='utf-8') as f:
+                    f.write(soup.prettify())
+
                 # Save individual result as text file
                 if data['main_content']:
                     # Add data to results
                     results.append(data)
-                    domain = self.extract_domain(url)
-                    filename = f"{output_dir}/{domain} - {data['title']}.txt"
-
-                    # Check if the filename makes an error in writing then change the file name
-                    try:   
-                        with open(filename, 'w', encoding='utf-8') as f:
-                            f.write("Writing is working")
-                    except:
-                        filename = f"{output_dir}/{domain} - {data['scrape_timestamp']}.txt"
 
                     with open(filename, 'w', encoding='utf-8') as f:
                         f.write(f"URL: {url}\n")
@@ -226,7 +230,11 @@ class WebScraper:
             
             # update the  processing time to averging 
             processing_time = time.time() - start_time
-            self.processing_time = (self.processing_time + processing_time) / 2
+            self.processing_time = (self.processing_time + processing_time) / (2 if self.processing_time==0.0 else 1)
+
+            self.number_of_urls_to_scrape -= 1
+
+            logger.info(f"reaminig time: {self.processing_time*self.number_of_urls_to_scrape/60:.2f} minutes")
 
 
         # Save to a JSON file with indentation  do not overwrite the json results if it exist 
@@ -256,7 +264,7 @@ def main():
         ])
     start_time = time.time()
     delay = 2
-    scraper = WebScraper(delay, delay, total_number_of_urls, main_dir)
+    scraper = WebScraper(delay, total_number_of_urls, main_dir)
     for key in urls_JSON:
         urls_to_scrape = urls_JSON[key]['links']
         scraping_states = urls_JSON[key]['scraping_states']
