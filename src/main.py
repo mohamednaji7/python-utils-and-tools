@@ -134,6 +134,24 @@ class HtmlCleaner:
             'main_content': main_content,
         }
             
+class TimeEsimtation:
+    def __init__(self, number_of_iterations):
+        self.processing_time = 0.0
+        self.number_of_iterations = number_of_iterations
+    
+    def start_iteration(self):
+        self.start_time = time.time()
+
+    def update_processing_time(self):
+        processing_time = time.time() - self.start_time
+        
+        # update the  processing time to averging 
+
+        self.processing_time = (self.processing_time + processing_time) / (2 if self.processing_time!=0.0 else 1)
+
+        self.number_of_iterations -= 1
+
+        logger.info(f"Reaminig time: {self.processing_time*self.number_of_iterations/60:.2f} minutes")
 
 
 class WebScraper:
@@ -142,10 +160,10 @@ class WebScraper:
         self.html_cleaner = HtmlCleaner()
         self.output_dir = output_dir
         os.makedirs(output_dir, exist_ok=True)
-        self.processing_time = 0.0
         self.delay = delay
         self.number_of_urls_to_scrape = number_of_urls_to_scrape
         self.total_number_of_urls_to_scrape = number_of_urls_to_scrape
+        self.clock = TimeEsimtation(number_of_urls_to_scrape)
         
     def extract_domain(self, url):
         parsed_uri = urlparse(url)
@@ -172,8 +190,7 @@ class WebScraper:
             
 
             logger.info(f"Scraping url: {-self.number_of_urls_to_scrape+self.total_number_of_urls_to_scrape}/{self.total_number_of_urls_to_scrape} {url}")
-
-            start_time = time.time()
+            self.clock.start_iteration()
             try:
                 # Be respectful with a delay between requests
                 time.sleep(self.delay)
@@ -229,12 +246,7 @@ class WebScraper:
 
             
             # update the  processing time to averging 
-            processing_time = time.time() - start_time
-            self.processing_time = (self.processing_time + processing_time) / (2 if self.processing_time!=0.0 else 1)
-
-            self.number_of_urls_to_scrape -= 1
-
-            logger.info(f"reaminig time: {self.processing_time*self.number_of_urls_to_scrape/60:.2f} minutes")
+            self.clock.update_processing_time() 
 
 
         # Save to a JSON file with indentation  do not overwrite the json results if it exist 
@@ -266,29 +278,39 @@ def main():
     delay = 2
     scraper = WebScraper(delay, total_number_of_urls, main_dir)
     for key in urls_JSON:
-        urls_to_scrape = urls_JSON[key]['links']
-        scraping_states = urls_JSON[key]['scraping_states']
-        
-        new_scraping_states , info = scraper.scrape_urls(urls_to_scrape, scraping_states, key)
+        # if key interupion happens  Ctrl+C
+        # clean and save the urls_JSON
+        # then brek the app again
+        try:
+            urls_to_scrape = urls_JSON[key]['links']
+            scraping_states = urls_JSON[key]['scraping_states']
+            
+            new_scraping_states , info = scraper.scrape_urls(urls_to_scrape, scraping_states, key)
 
 
-        urls_JSON[key]['scraping_states'] = new_scraping_states
+            # Atomic Code -------------
+            urls_JSON[key]['scraping_states'] = new_scraping_states
 
-        # only add info if there at leas one falid scrape (not 'scraped')
-        if sum(new_scraping_states) < len(new_scraping_states):
-            urls_JSON[key]['info'] = info
-        else:
-            # drop the info if it exist 
-            if 'info' in urls_JSON[key]:
-                del urls_JSON[key]['info']
-        
-        summary[key] = {
-            "total_links": len(urls_to_scrape),
-            "scraped": sum(new_scraping_states),
-            "failed": len(urls_to_scrape) - sum(new_scraping_states),
-        }
-        
-        
+            # only add info if there at leas one falid scrape (not 'scraped')
+            if sum(new_scraping_states) < len(new_scraping_states):
+                urls_JSON[key]['info'] = info
+            # Atomic Code -------------
+
+            else:
+                # drop the info if it exist 
+                if 'info' in urls_JSON[key]:
+                    del urls_JSON[key]['info']
+            
+            summary[key] = {
+                "total_links": len(urls_to_scrape),
+                "scraped": sum(new_scraping_states),
+                "failed": len(urls_to_scrape) - sum(new_scraping_states),
+            }
+        except KeyboardInterrupt:
+            with open("input/urls.json", "w", encoding="utf-8") as f:
+                json.dump(urls_JSON, f, indent=4, ensure_ascii=False)  # ensure_ascii=False keeps Unicode characters
+            break
+
     # Save to a JSON file with indentation
     with open("input/urls.json", "w", encoding="utf-8") as f:
         json.dump(urls_JSON, f, indent=4, ensure_ascii=False)  # ensure_ascii=False keeps Unicode characters
