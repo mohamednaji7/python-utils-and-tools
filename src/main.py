@@ -137,21 +137,26 @@ class HtmlCleaner:
 class TimeEsimtation:
     def __init__(self, number_of_iterations):
         self.processing_time = 0.0
-        self.number_of_iterations = number_of_iterations
+        self.iter_index = 0
+        self.total_number_of_iterations = number_of_iterations
     
     def start_iteration(self):
         self.start_time = time.time()
+        # logger.info(f"Iteration: {self.iter_index}/{self.total_number_of_iterations}")
+        if self.iter_index == 0:
+            logger.info(f"Started iteration: {self.iter_index}/{self.total_number_of_iterations}")
+        else:
+            logger.info(f"Reaminig time: {self.processing_time*self.total_number_of_iterations/60:.2f} minutes, iter: {self.iter_index}/{self.total_number_of_iterations}")
+
 
     def update_processing_time(self):
         processing_time = time.time() - self.start_time
-        
         # update the  processing time to averging 
+        self.processing_time = (self.processing_time + processing_time) / (2 if self.iter_index>0 else 1)
 
-        self.processing_time = (self.processing_time + processing_time) / (2 if self.processing_time!=0.0 else 1)
+        self.iter_index += 1
 
-        self.number_of_iterations -= 1
 
-        logger.info(f"Reaminig time: {self.processing_time*self.number_of_iterations/60:.2f} minutes")
 
 
 class WebScraper:
@@ -180,7 +185,11 @@ class WebScraper:
         # for url in urls:
         new_scraping_states = []
         info = []
+        total_urls = len(urls)
+        assert total_urls == len(scraping_states)
+        i = -1
         for url, state in zip(urls, scraping_states):
+            i+=1
             if state == True:
                 logger.info(f"Skipping...")
                 new_scraping_states.append(True)
@@ -189,8 +198,9 @@ class WebScraper:
                 continue
             
 
-            logger.info(f"Scraping url: {-self.number_of_urls_to_scrape+self.total_number_of_urls_to_scrape}/{self.total_number_of_urls_to_scrape} {url}")
             self.clock.start_iteration()
+            logger.info(f"Scraping url: {i}/{total_urls} - {url}")
+
             try:
                 # Be respectful with a delay between requests
                 time.sleep(self.delay)
@@ -309,47 +319,45 @@ def main():
     delay = 2
     scraper = WebScraper(delay, total_number_of_urls, main_dir)
     for key in urls_JSON:
-        # if key interupion happens  Ctrl+C
-        # clean and save the urls_JSON
-        # then brek the app again
-        try:
-            urls_to_scrape = urls_JSON[key]['links']
-            scraping_states = urls_JSON[key]['scraping_states']
-            
-            new_scraping_states , info = scraper.scrape_urls(urls_to_scrape, scraping_states, key)
+
+        urls_to_scrape = urls_JSON[key]['links']
+        scraping_states = urls_JSON[key]['scraping_states']
+        
+        new_scraping_states , info = scraper.scrape_urls(urls_to_scrape, scraping_states, key)
 
 
-            # Atomic Code -------------
-            urls_JSON[key]['scraping_states'] = new_scraping_states
+        # Atomic Code -------------
+        urls_JSON[key]['scraping_states'] = new_scraping_states
 
-            # only add info if there at leas one falid scrape (not 'scraped')
-            if sum(new_scraping_states) < len(new_scraping_states):
-                urls_JSON[key]['info'] = info
-            # Atomic Code -------------
+        # only add info if there at leas one falid scrape (not 'scraped')
+        if sum(new_scraping_states) < len(new_scraping_states):
+            urls_JSON[key]['info'] = info
+        # Atomic Code -------------
 
-            else:
-                # drop the info if it exist 
-                if 'info' in urls_JSON[key]:
-                    del urls_JSON[key]['info']
-            
-            summary[key] = {
-                "total_links": len(urls_to_scrape),
-                "scraped": sum(new_scraping_states),
-                "failed": len(urls_to_scrape) - sum(new_scraping_states),
-            }
-        except KeyboardInterrupt:
-            save_json("input/urls.json", summary)
-            break
+        else:
+            # drop the info if it exist 
+            if 'info' in urls_JSON[key]:
+                del urls_JSON[key]['info']
+        
+        summary[key] = {
+            "total_links": len(urls_to_scrape),
+            "scraped": sum(new_scraping_states),
+            "failed": len(urls_to_scrape) - sum(new_scraping_states),
+        }
 
-    # Save to a JSON file with indentation
-    save_json("input/urls.json", summary)
+        # save progress 
+        save_json("input/urls.json", urls_JSON)
+        save_summary(summary, main_dir)
 
+    # save progress 
+    save_json("input/urls.json", urls_JSON)
+    save_summary(summary, main_dir)
     
         # print  time.time() - start_time
     logger.info(f"Total number of links: {total_number_of_urls}")
     logger.info(f"Total time: {(time.time() - start_time)/60:.2f}m")
 
-    save_summary(summary, main_dir)
+    
 
 
 if __name__ == "__main__":
