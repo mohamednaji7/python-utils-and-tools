@@ -63,7 +63,6 @@ class WebClient:
         driver.quit()
 
         soup = BeautifulSoup(page_source, "html.parser")
-        logger.log(logging.DEBUG, soup.prettify())
 
         return soup
 
@@ -71,15 +70,7 @@ class WebClient:
 class HtmlCleaner:
 
         
-    def clean_text(self, text):
-        """Clean extracted text"""
-        # Remove extra whitespace
-        text = re.sub(r'\s+', ' ', text).strip()
-        # Remove script and style content that might be left
-        text = re.sub(r'<script.*?</script>', '', text, flags=re.DOTALL)
-        text = re.sub(r'<style.*?</style>', '', text, flags=re.DOTALL)
-        return text
-    
+
     def clean_content(self, soup):
         """Clean extracted content"""
     
@@ -89,11 +80,17 @@ class HtmlCleaner:
             
         # Remove elements with common ad-related class names or ids
         ad_patterns = ['ad', 'ads', 'advertisement', 'banner', 'popup', 'modal', 'cookie']
-        for pattern in ad_patterns:
-            for element in soup.find_all(class_=re.compile(pattern, re.IGNORECASE)):
-                element.decompose()
-            for element in soup.find_all(id=re.compile(pattern, re.IGNORECASE)):
-                element.decompose()
+        # for pattern in ad_patterns:
+        #     for element in soup.find_all(class_=re.compile(pattern, re.IGNORECASE)):
+        #         element.decompose()
+        #     for element in soup.find_all(id=re.compile(pattern, re.IGNORECASE)):
+        #         element.decompose()
+
+        # the regex removed everything
+
+        for element in soup.find_all(ad_patterns):
+            element.decompose()
+
         return soup
         
     def get_meta_data(self, soup):
@@ -116,7 +113,6 @@ class HtmlCleaner:
         
         if not main_container:
             print(soup.prettify())
-
             raise Exception("Could not find main content container or body")
 
         # Convert HTML to Markdown
@@ -124,7 +120,7 @@ class HtmlCleaner:
         markdown_converter.ignore_links = False  # Set to True if you don't want links
         markdown_content = markdown_converter.handle(str(main_container))
 
-        return markdown_content.strip()
+        return markdown_content
     
 
 
@@ -142,7 +138,7 @@ class HtmlCleaner:
 
         # Extract main content
         main_content = self.extract_main_content(soup)   
-        
+
         
         return {
             'title': title,
@@ -179,6 +175,34 @@ class WebScraper:
             try:
                 # soup = self.web_client.get_soup_response(url)
                 soup = self.web_client.get_rendered_soup_response(url)
+                soup = self.html_cleaner.clean_content(soup)
+                                
+                                
+                # <DEBUGGING> --------------------------------------------------------
+                # print(soup)
+                # main_container = soup.find('main') or soup.find('article') or soup.find('body')
+                # if not main_container:
+                #     print(soup.prettify())
+
+                #     raise Exception("Could not find main content container or body")
+
+
+                # # print(main_container.prettify())
+                # # print('*'*300)
+                # print(main_container.text)
+                # print('*'*300)
+                # # Convert HTML to Markdown
+                # markdown_converter = html2text.HTML2Text()
+                # markdown_converter.ignore_links = True  # Set to True if you don't want links
+                # markdown_content = markdown_converter.handle(str(main_container))
+                # print(markdown_content)
+                # print('*'*300)
+
+
+                # print('main_container not None')
+                # break 
+                # # </ DEBUGGING> --------------------------------------------------------
+                
                 data = self.html_cleaner.extract_content(soup)       
                 # Save individual result as text file
                 if data['main_content']:
