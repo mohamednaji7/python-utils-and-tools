@@ -1,11 +1,8 @@
-import requests
 from bs4 import BeautifulSoup
-import pandas as pd
 import time
 import html2text
 import random
 import json
-import re
 from urllib.parse import urlparse
 import os
 from rich.console import Console

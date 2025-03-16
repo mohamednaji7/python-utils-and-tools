@@ -1,9 +1,5 @@
-requests
 bs4
-pandas
 rich
 html2text
-webdriver_manager
-selenium
 webdriver_manager
 selenium
