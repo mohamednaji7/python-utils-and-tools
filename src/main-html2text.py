@@ -143,9 +143,9 @@ class HtmlCleaner:
         return {
             'title': title,
             'description': description,
-            'main_content': main_content,
             'content_length': len(main_content),
             'scrape_timestamp': time.strftime('%Y-%m-%d %H:%M:%S'),
+            'main_content': main_content,
         }
             
 
@@ -231,14 +231,13 @@ class WebScraper:
                 logger.error(f"{e}")
                 console.print_exception()
 
-        # Create DataFrame and save as CSV
-        df = pd.DataFrame(results)
 
-        csv_path = f"{self.output_dir}/scraped_data.csv"
-
-        df.to_csv(csv_path, index=False)
+        # Save to a JSON file with indentation
+        json_path = f"{self.output_dir}/scraped_data.json"
+        with open(json_path, 'w', encoding='utf-8') as f:
+            json.dump(results, f, indent=2, ensure_ascii=False)
         
-        console.print(f"Scraping completed. Data saved to {csv_path}")
+        console.print(f"Scraping completed. Data saved to {json_path}")
 
         return results
 
