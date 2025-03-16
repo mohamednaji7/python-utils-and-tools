@@ -230,7 +230,7 @@ class WebScraper:
             
             # update the  processing time to averging 
             processing_time = time.time() - start_time
-            self.processing_time = (self.processing_time + processing_time) / (2 if self.processing_time==0.0 else 1)
+            self.processing_time = (self.processing_time + processing_time) / (2 if self.processing_time!=0.0 else 1)
 
             self.number_of_urls_to_scrape -= 1
 
