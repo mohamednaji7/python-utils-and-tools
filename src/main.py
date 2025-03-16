@@ -159,10 +159,13 @@ class WebScraper:
         results = []
         # for url in urls:
         new_scraping_states = []
+        info = []
         for url, state in zip(urls, scraping_states):
             if state == True:
                 logger.info(f"Skipping...")
                 new_scraping_states.append(True)
+                info.append("scraped")
+
                 continue
             
 
@@ -190,6 +193,14 @@ class WebScraper:
                     results.append(data)
                     domain = self.extract_domain(url)
                     filename = f"{output_dir}/{domain} - {data['title']}.txt"
+
+                    # Check if the filename makes an error in writing then change the file name
+                    try:   
+                        with open(filename, 'w', encoding='utf-8') as f:
+                            f.write("Writing is working")
+                    except:
+                        filename = f"{output_dir}/{domain} - {data['scrape_timestamp']}.txt"
+
                     with open(filename, 'w', encoding='utf-8') as f:
                         f.write(f"URL: {url}\n")
                         # add the sraping time to the file
@@ -203,24 +214,34 @@ class WebScraper:
                         f.write(data['main_content'])
                 
                 new_scraping_states.append(True)
+                info.append("scraped")
+
                 
             except Exception as e:
                 logger.error(f"{e}")
                 console.print_exception()
                 new_scraping_states.append(False)
+                info.append(f"{e}")
+
             
             # update the  processing time to averging 
             processing_time = time.time() - start_time
             self.processing_time = (self.processing_time + processing_time) / 2
 
-        # Save to a JSON file with indentation
+
+        # Save to a JSON file with indentation  do not overwrite the json results if it exist 
         json_path = f"{output_dir}/scraped_data.json"
+        if os.path.exists(json_path):
+            with open(json_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                results.extend(data)
         with open(json_path, 'w', encoding='utf-8') as f:
             json.dump(results, f, indent=2, ensure_ascii=False)
-        
+
         logger.info(f"Scraping completed. Data saved to {json_path}")
 
-        return new_scraping_states
+
+        return new_scraping_states, info
      
 
 def main():
@@ -229,7 +250,10 @@ def main():
     
     urls_JSON = json.load(open('input/urls.json'))
     summary = {}
-    total_number_of_urls = sum([len(urls_JSON[key]['links']) for key in urls_JSON])
+    total_number_of_urls = sum([
+        len(urls_JSON[key]['scraping_states']) - sum(urls_JSON[key]['scraping_states']) 
+            for key in urls_JSON
+        ])
     start_time = time.time()
     delay = 2
     scraper = WebScraper(delay, delay, total_number_of_urls, main_dir)
@@ -237,8 +261,18 @@ def main():
         urls_to_scrape = urls_JSON[key]['links']
         scraping_states = urls_JSON[key]['scraping_states']
         
-        new_scraping_states = scraper.scrape_urls(urls_to_scrape, scraping_states, key)
+        new_scraping_states , info = scraper.scrape_urls(urls_to_scrape, scraping_states, key)
 
+
+        urls_JSON[key]['scraping_states'] = new_scraping_states
+
+        # only add info if there at leas one falid scrape (not 'scraped')
+        if sum(new_scraping_states) < len(new_scraping_states):
+            urls_JSON[key]['info'] = info
+        else:
+            # drop the info if it exist 
+            if 'info' in urls_JSON[key]:
+                del urls_JSON[key]['info']
         
         summary[key] = {
             "total_links": len(urls_to_scrape),
@@ -246,7 +280,6 @@ def main():
             "failed": len(urls_to_scrape) - sum(new_scraping_states),
         }
         
-        urls_JSON[key]['scraping_states'] = new_scraping_states
         
     # Save to a JSON file with indentation
     with open("input/urls.json", "w", encoding="utf-8") as f:
