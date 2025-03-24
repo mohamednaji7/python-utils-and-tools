@@ -229,6 +229,9 @@ class WebScraper:
 
                 # Save individual result as text file
                 if data['main_content']:
+                    data['url'] = url
+                    data['domain'] = domain
+                    data['subdir'] = subdir
                     # Add data to results
                     results.append(data)
 
@@ -260,7 +263,7 @@ class WebScraper:
 
 
         # Save to a JSON file with indentation  do not overwrite the json results if it exist 
-        json_path = f"{output_dir}/scraped_data.json"
+        json_path = f"{output_dir}/{subdir}.json"
         if os.path.exists(json_path):
             with open(json_path, 'r', encoding='utf-8') as f:
                 data = json.load(f)
@@ -277,7 +280,7 @@ def save_json(json_path, json_data, indent=4):
     with open(json_path, 'w', encoding='utf-8') as f:
         json.dump(json_data, f, indent=indent, ensure_ascii=False)
 
-def  save_summary(summary, main_dir):
+def save_summary(summary, main_dir):
 
     json_summary_path = f"{main_dir}/summary.json"
     
