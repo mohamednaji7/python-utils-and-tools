@@ -6,11 +6,6 @@ input/
 
 # Tests
 
-# Dev
-try-*
-urls.py
-dev-*
-dev.*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
