@@ -16,6 +16,11 @@ use.*
 use-*
 
 
+# Usage 
+use.*
+use-*
+urls.py
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

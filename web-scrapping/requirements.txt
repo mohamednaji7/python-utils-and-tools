@@ -3,3 +3,5 @@ rich
 html2text
 webdriver_manager
 selenium
+vecs
+openai
