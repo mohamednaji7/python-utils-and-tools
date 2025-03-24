@@ -12,7 +12,8 @@ dev-*
 dev.*
 
 # Usage 
-urls.py
+use.*
+use-*
 
 
 # Byte-compiled / optimized / DLL files
