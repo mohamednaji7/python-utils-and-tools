@@ -6,6 +6,15 @@ input/
 
 # Tests
 
+# Dev
+try-*
+dev-*
+dev.*
+
+# Usage 
+use.*
+use-*
+urls.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
