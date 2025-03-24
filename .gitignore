@@ -8,9 +8,12 @@ input/
 
 # Dev
 try-*
-urls.py
 dev-*
 dev.*
+
+# Usage 
+urls.py
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
