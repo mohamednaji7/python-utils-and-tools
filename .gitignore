@@ -6,10 +6,6 @@ input/
 
 # Tests
 
-# Dev
-try-*
-dev-*
-dev.*
 
 # Usage 
 use.*
