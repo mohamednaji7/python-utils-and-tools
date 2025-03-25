@@ -3,7 +3,7 @@ import json
 from openai import AzureOpenAI
 import tiktoken
 
-from utils import TimeEstimator, FileSystemProcessor as fs_processor
+from utils import TimeEstimator, FileSystemProcessor as fsp
 
 from dotenv import load_dotenv
 # Load environment variables from .env file
@@ -92,74 +92,78 @@ def tokens_size(model, text):
 
 
 
-def chunk_and_embed(files):
-    records = []
-    record_id = 0
+def make_metdata(input_path, output_path):
+    print("Processing files...")
 
-    # Example usage:
-    estimator = TimeEstimator(len(files))
-
+    files = fsp.load_json(input_path)
+    records_id_metadata = []
 
 
     for idx, file in enumerate(files):
         
-        # chunk and embed the text  
-        estimator.start_iteration()
-
         text = file['main_content']
-
         # Chunk the text
         chunks = chunk_text(MODEL, text)
 
-
-
         for chunk_idx, chunk in enumerate(chunks):
-            # Embed the chunk
-            embedding = get_embeddings(chunk, MODEL)
-
             # Metadata to store with the vector
             metadata = {
+                'url': file['url'],
+                'domain': file['domain'],
                 'title': file['title'],
                 'description': file['description'],
                 'scrape_timestamp': file['scrape_timestamp'],
-                'url': file['url'],
-                'domain': file['domain'],
                 'category': file['cat'],
                 'original_doc_index': idx,
-                'number_of_chunks': len(chunks),
                 'doc_tokens_size': tokens_size(MODEL, text),
                 'chunk_idx': chunk_idx,
-                'doc_idx': idx
+                'chunk_content': chunk,
+                'number_of_chunks': len(chunks),
             }
             
-            records.append((
-                record_id,
-                embedding,
-                metadata
-            ))
+            records_id_metadata.append(
+                {
+                    "record_id": str((metadata['url'], metadata['chunk_idx'])),
+                    "metadata": metadata,
+                }
+            )
             
-            # break
-        record_id += 1
+    fsp.save_json(output_path, records_id_metadata, indent=2, append_not_overwrite=False, backup=True, ensure_ascii=False)
+
+
+
+
+
+
+def add_embedding(records_id_metadata_path, records_path):
+    print("Making embeddings files...")
+
+    records = []
+
+    records_id_metadata = fsp.load_json(records_id_metadata_path)
+
+    print(f"Total records id metadata: {len(records_id_metadata)}")
+    estimator = TimeEstimator(len(records_id_metadata))
+
+
+    for record_id_metadata in records_id_metadata: 
+        # chunk and embed the text  
+        estimator.start_iteration()
+
+        # Embed the chunk
+        embedding = get_embeddings(
+            record_id_metadata['metadata']['chunk_content'],
+            MODEL)
+
+        records.append((
+            record_id_metadata['record_id'],
+            embedding,
+            record_id_metadata['metadata']
+        ))
+
         estimator.update_processing_time()
-        # break
-    return records 
 
+    # print(new_records[0])
+    # fsp.restore_backup_file(records_path)
+    fsp.save_json(records_path, records, indent=2, backup=True, append_not_overwrite=False)
 
-
-
-
-def process_chunk_and_embed(input_path, output_path):
-    print("Processing files...")
-    # Load JSON data
-    with open(input_path, 'r') as file:
-        files = json.load(file)
-
-    # Process data
-    records = chunk_and_embed(files)
-
-    # Save results
-    fs_processor.save_json(output_path, records, indent=2, append_not_overwrite=False, backup=True, ensure_ascii=False)
-
-
-# if __name__ == "__main__":
-#     process_files("input/results_deduplicated.json", "records.json")
