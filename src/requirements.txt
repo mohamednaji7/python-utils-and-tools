@@ -1,0 +1,6 @@
+rich
+dotenv
+vecs
+openai
+vecs
+tiktoken

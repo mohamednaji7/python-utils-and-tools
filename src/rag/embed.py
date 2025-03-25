@@ -1,14 +1,9 @@
-# https://colab.research.google.com/drive/11JC0iHtyr1Fpy4aoYI_qsn5BTGdb-Zk7
-# https://colab.research.google.com/drive/1V-yQhWnEvWh7WSoxvpVAdxW5fEQ0-PmB
-
 import os
 import json
 from openai import AzureOpenAI
-import vecs
 import tiktoken
 
-from utils import init_logger, TimeEstimator
-init_logger()
+from utils import TimeEstimator, FileSystemProcessor as fs_processor
 
 from dotenv import load_dotenv
 # Load environment variables from .env file
@@ -32,33 +27,11 @@ client = AzureOpenAI(
 
 
 
-# Fetch variables
-user = os.getenv("user")
-host = os.getenv("host")
-port = os.getenv("port")
-dbname = os.getenv("dbname")
-password = os.getenv("password")
 
-
-# DB_CONNECTION 
-DB_CONNECTION = f"postgresql://{user}:{password}@{host}:{port}/{dbname}"
-
-
-
-
-vx = vecs.create_client(DB_CONNECTION)
-dimension = 1536
-docs = vx.get_or_create_collection(name="new-websites-data", dimension=dimension)
-
-docs.create_index(measure=vecs.IndexMeasure.cosine_distance)
-
-
-
-
-# Open the JSON file
-with open('results_deduplicated.json', 'r') as file:
-    # Load the JSON data
-    files = json.load(file)
+# # Open the JSON file
+# with open('input/results_deduplicated.json', 'r') as file:
+#     # Load the JSON data
+#     files = json.load(file)
 
 # Now you can work with the data
 
@@ -73,7 +46,7 @@ def get_embeddings(txt, model):
   )
   return embedding.data[0].embedding
 
-embedding = get_embeddings("Attenion is all you need", MODEL)
+# embedding = get_embeddings("Attenion is all you need", MODEL)
 
 # print("embedding")
 # print(type(embedding))
@@ -152,9 +125,8 @@ def chunk_and_embed(files):
                 'url': file['url'],
                 'domain': file['domain'],
                 'category': file['cat'],
-                'subdir': file['subdir'],
                 'original_doc_index': idx,
-                'chunks_length': len(chunks),
+                'number_of_chunks': len(chunks),
                 'doc_tokens_size': tokens_size(MODEL, text),
                 'chunk_idx': chunk_idx,
                 'doc_idx': idx
@@ -172,6 +144,22 @@ def chunk_and_embed(files):
         # break
     return records 
 
-records = chunk_and_embed(files)
-# print(records)
-docs.upsert(records)
+
+
+
+
+def process_chunk_and_embed(input_path, output_path):
+    print("Processing files...")
+    # Load JSON data
+    with open(input_path, 'r') as file:
+        files = json.load(file)
+
+    # Process data
+    records = chunk_and_embed(files)
+
+    # Save results
+    fs_processor.save_json(output_path, records, indent=2, append_not_overwrite=False, backup=True, ensure_ascii=False)
+
+
+# if __name__ == "__main__":
+#     process_files("input/results_deduplicated.json", "records.json")
