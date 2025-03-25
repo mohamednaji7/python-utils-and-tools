@@ -2,7 +2,8 @@
 input/
 
 # Project Outputs
-*output/
+output/
+working/
 
 # Tests
 
@@ -11,6 +12,7 @@ input/
 use.*
 use-*
 urls.py
+# requirements.txt
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
