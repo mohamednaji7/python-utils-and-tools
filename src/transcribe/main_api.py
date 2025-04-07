@@ -2,6 +2,10 @@ from openai import OpenAI
 from pydub import AudioSegment
 
 
+
+from utils import make_output_path
+
+
 import os
 import time
 from rich.console import Console
@@ -39,8 +43,9 @@ def convert_file_to_text(model, file_path, file_language, TRANSLATE, TIMESTAMP):
     file_dir = os.path.dirname(file_path)
 
     # Perform transcription or translation
+    output_path = make_output_path(file_path, TRANSLATE)
+
     if not TRANSLATE:
-        output_path = os.path.join(file_dir, f"{file_name}_transcription.txt")
         if os.path.isfile(output_path):
             console.print(f"[SKIP] ⏭️ Transcription already exists: {output_path}", style="skip")
             return
@@ -50,7 +55,7 @@ def convert_file_to_text(model, file_path, file_language, TRANSLATE, TIMESTAMP):
 
         mp4_file = AudioSegment.from_file(file_path, "mp4")
         ten_minutes = 10 * 60 * 1000
-        result = ''
+        result = {"segments": []}
         for i in range(0, len(mp4_file), ten_minutes):
             # PyDub handles time in milliseconds
 
@@ -67,11 +72,10 @@ def convert_file_to_text(model, file_path, file_language, TRANSLATE, TIMESTAMP):
                 # response_format="text"
             )
             # result = transcription.text
-            result += transcription.text + "\n"
+            result['segments'].append({"text": transcription.text})
 
     else:
         raise ValueError("Translation is not supported in this version.")
-        output_path = os.path.join(file_dir, f"{file_name}_translation.txt")
         if os.path.isfile(output_path):
             console.print(f"[SKIP] ⏭️ Translation already exists: {output_path}", style="skip")
             return
@@ -82,6 +86,7 @@ def convert_file_to_text(model, file_path, file_language, TRANSLATE, TIMESTAMP):
     with open(output_path, 'w', encoding='utf-8') as f:
         for segment in result['segments']:
             if TIMESTAMP:
+                raise ValueError("Timestamp is not supported in this version.")
                 start_time = segment['start']
                 end_time = segment['end']
                 formatted_start = f"{int(start_time // 60):02d}:{int(start_time % 60):02d}"

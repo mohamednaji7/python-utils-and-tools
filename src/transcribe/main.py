@@ -2,6 +2,11 @@ import torch
 import whisper
 import os
 import time
+
+
+from utils import make_output_path
+
+
 from rich.console import Console
 from rich.theme import Theme
 
@@ -34,8 +39,8 @@ def convert_file_to_text(model, file_path, file_language, TRANSLATE, TIMESTAMP):
     file_dir = os.path.dirname(file_path)
 
     # Perform transcription or translation
+    output_path = make_output_path(file_path, TRANSLATE)
     if not TRANSLATE:
-        output_path = os.path.join(file_dir, f"{file_name}_transcription.txt")
         if os.path.isfile(output_path):
             console.print(f"[SKIP] ⏭️ Transcription already exists: {output_path}", style="skip")
             return
@@ -43,7 +48,6 @@ def convert_file_to_text(model, file_path, file_language, TRANSLATE, TIMESTAMP):
         console.print(f"[INFO] 🎙️ Transcribing {file_path}...", style="info")
         result = model.transcribe(file_path, language=file_language)
     else:
-        output_path = os.path.join(file_dir, f"{file_name}_translation.txt")
         if os.path.isfile(output_path):
             console.print(f"[SKIP] ⏭️ Translation already exists: {output_path}", style="skip")
             return
