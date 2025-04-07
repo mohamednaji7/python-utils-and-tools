@@ -25,9 +25,10 @@ install_requires.extend(read_requirements('src/utils/requirements.txt'))
 setup(
     name="python-utils-and-tools",
     version="0.1.0",
+    packages=find_packages(where="src"),  # This will find pyut, pyut.rag, pyut.utils, etc.
     package_dir={"pyut": "src"},  # Map the pyut package to the src directory
     # packages=["pyut", "pyut.rag", "pyut.utils"],  # Explicitly list the packages
-packages=find_packages(where="src"),  # Dynamically find all packages in src    install_requires=install_requires,
+
     author="Mohamed Nagy",
     author_email="n4jidx@example.com",
     description="A collection of Python utilities and tools",
