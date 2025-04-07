@@ -4,6 +4,7 @@ input/
 # Project Outputs
 output/
 working/
+*_data/
 
 # Tests
 
@@ -27,6 +28,7 @@ urls.py
 __pycache__/
 *.py[cod]
 *$py.class
+*.pyc
 
 # C extensions
 *.so
@@ -197,3 +199,10 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# Ignore backup files
+*.backup
+
+# Ignore system files
+.DS_Store
+Thumbs.db
