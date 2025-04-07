@@ -36,4 +36,5 @@ setup(
     description="A collection of Python utilities and tools",
     long_description=open('README.md').read() if os.path.exists('README.md') else "",
     long_description_content_type="text/markdown",
+    install_requires=install_requires,
 )
