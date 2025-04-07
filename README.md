@@ -99,12 +99,6 @@ The `utils/` directory contains helper scripts for file operations, logging, and
   python3 utils/time_estimator.py
   ```
 
-## Data
-
-The `rag_data/` directory contains input and output data for the RAG tools. Ensure that the required input files are present before running the scripts.
-
-- **Input Data:** Located in `rag_data/input/`.
-- **Output Data:** Results are saved in `rag_data/output/`.
 
 ## Notes
 
