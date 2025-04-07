@@ -1,111 +1,420 @@
-# python-utils-and-tools
+# Python Utils and Tools
 
-This repository contains various Python utilities and tools, including web scraping, data processing, and other helper scripts. The tools are modular and designed to handle specific tasks efficiently.
+A comprehensive collection of Python utilities and tools for various tasks including transcription, RAG (Retrieval-Augmented Generation), web scraping, and general utilities.
+
+## Quick Start
+
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/python-utils-and-tools.git
+cd python-utils-and-tools
+
+# Install the package
+pip install -e .
+```
+
+## Quick Overview
+
+### 1. Transcription Module (`pyut.transcribe`)
+Transcribe and translate audio/video files using OpenAI's Whisper model.
+
+**Quick Usage:**
+```python
+from pyut.transcribe import main as transcribe_main
+
+config = {
+    "MODEL": "base",
+    "GPU": True,
+    "FILES": [
+        {
+            "FILE_PATH": "path/to/your/file.mp4",
+            "FILE_LANGUAGE": "en",
+            "TRANSLATE": False,
+            "TIMESTAMP": True
+        }
+    ]
+}
+
+transcribe_main.convert_to_text(config)
+```
+
+### 2. RAG Module (`pyut.rag`)
+Process, embed, and manage data for retrieval-augmented generation tasks.
+
+**Quick Usage:**
+```python
+from pyut.rag import combine_json, embed, upload_records
+
+# Combine JSON files
+combine_json.process_files("input_dir", "output.json")
+
+# Generate embeddings
+embed.make_metadata("input.json", "metadata.json")
+embed.add_embedding("metadata.json", "embeddings.json")
+
+# Upload to vector database
+upload_records.supabase_upload_records("embeddings.json", "collection_name")
+```
+
+### 3. Web Scraping Module (`pyut.web-scrapping`)
+Extract and process data from web sources with JavaScript rendering support.
+
+**Quick Usage:**
+```python
+from pyut.web_scrapping import WebScraper
+
+scraper = WebScraper(delay=2, number_of_urls_to_scrape=10)
+urls = ["https://example.com/page1", "https://example.com/page2"]
+scraping_states = [False] * len(urls)
+scraper.scrape_urls(urls, scraping_states, subdir="category1")
+```
+
+### 4. Utilities Module (`pyut.utils`)
+Common utilities for file operations, logging, and time estimation.
+
+**Quick Usage:**
+```python
+from pyut.utils import TimeEstimator, FileSystemProcessor, logger
+
+# Time estimation
+estimator = TimeEstimator(number_of_iterations=100)
+estimator.start_iteration()
+# Your code here
+estimator.update_processing_time()
+
+# File processing
+fsp = FileSystemProcessor(root_dir="data")
+data = fsp.load_json("input.json")
+fsp.save_json("output.json", data, backup=True)
+
+# Logging
+logger.info("Processing started")
+```
+
+## Dependencies
+
+The project uses several key dependencies:
+
+- `rich`: Terminal formatting and progress bars
+- `openai`: OpenAI API integration
+- `vecs`: Vector operations
+- `tiktoken`: Token counting
+- `python-dotenv`: Environment variable management
+- `openai-whisper`: Audio transcription
+- `python-magic`: File type detection
 
 ## Installation
 
-Clone the repository:
+1. **System Requirements:**
+   - Python 3.x
+   - FFmpeg (for transcription)
+   - CUDA-compatible GPU (optional, for faster processing)
+   - Chrome browser (for web scraping)
 
-```bash
-git clone https://github.com/mohamednaji7/python-utils-and-tools.git python-utils-and-tools
+2. **Install the Package:**
+   ```bash
+   pip install -e .
+   ```
+
+3. **Environment Setup:**
+   - Copy `.env.example` to `.env` in each module directory
+   - Configure your API keys and settings
+
+---
+
+# Detailed Documentation
+
+## 1. Transcription Module
+
+A powerful tool for transcribing and translating audio/video files using OpenAI's Whisper model.
+
+### Features
+
+- 🎙️ Transcribe audio/video files to text
+- 🌐 Translate audio/video content to English
+- ⏱️ Optional timestamp support for transcriptions
+- 📊 Progress visualization and duration plotting
+- 🔄 Batch processing capabilities
+- 🎯 GPU acceleration support
+- 📝 Detailed logging and error handling
+
+### Components
+
+#### 1. Preprocessing (`preprocess.py`)
+
+Handles file validation and preparation:
+- Checks file existence and audio stream presence
+- Calculates file durations
+- Generates file status reports
+- Creates visualization plots of file durations
+- Prepares JSON configuration for batch processing
+
+#### 2. Transcription (`main.py`)
+
+Performs the actual transcription/translation:
+- Supports multiple Whisper models
+- GPU acceleration when available
+- Timestamp generation
+- Translation to English
+- Progress tracking and logging
+
+### Configuration
+
+Create a JSON configuration file with the following structure:
+```json
+{
+    "MODEL": "base",  // Whisper model size (tiny, base, small, medium, large)
+    "GPU": true,     // Enable GPU acceleration
+    "FILES": [
+        {
+            "FILE_PATH": "path/to/your/file.mp4",
+            "FILE_LANGUAGE": "en",  // Source language code
+            "TRANSLATE": false,     // Whether to translate to English
+            "TIMESTAMP": true       // Whether to include timestamps
+        }
+    ]
+}
 ```
 
-## Setup
+### Output
 
-1. Navigate to the project directory:
+The tool generates:
+- Text files with transcriptions/translations
+- Optional timestamps for each segment
+- Progress visualization plots
+- Success logs with processing time
 
-```bash
-cd python-utils-and-tools/src
+### Notes
+
+- The tool automatically skips files that have already been processed
+- Processing time varies based on file duration and model size
+- GPU acceleration significantly improves processing speed
+- Supported input formats include MP4, MP3, WAV, and other common audio/video formats
+
+## 2. RAG Module
+
+A powerful module for processing, embedding, and managing data for retrieval-augmented generation tasks.
+
+### Features
+
+- 🔄 JSON data combination and deduplication
+- 📝 Text chunking and embedding generation
+- 🔍 Vector database integration
+- ⏱️ Time estimation for long-running tasks
+- 📊 Metadata management
+- 🔐 Environment-based configuration
+
+### Components
+
+#### 1. JSON Data Management (`combine-json.py`)
+
+Handles JSON data processing and deduplication:
+- Combines multiple JSON files
+- Removes duplicates based on specified keys
+- Maintains category information
+- Preserves data integrity
+
+#### 2. Embedding Generation (`embed.py`)
+
+Creates and manages vector embeddings:
+- Text chunking with overlap
+- Token counting and management
+- Metadata generation
+- Azure OpenAI integration
+- Batch processing support
+
+#### 3. Record Upload (`upload_records.py`)
+
+Manages vector database operations:
+- Vector database connection
+- Batch record uploading
+- Index creation and management
+- Progress tracking
+
+### Environment Variables
+
+```env
+AZURE_OPENAI_KEY=your_api_key
+AZURE_OPENAI_MODELID=your_model_id
+OPENAI_API_VERSION=your_api_version
+AZURE_OPENAI_ENDPOINT=your_endpoint
+user=your_db_user
+host=your_db_host
+port=your_db_port
+dbname=your_db_name
+password=your_db_password
 ```
 
-2. Create and activate a virtual environment:
+### Text Chunking Parameters
 
-```bash
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-```
+- `max_tokens`: Maximum tokens per chunk (default: 500)
+- `overlap`: Token overlap between chunks (default: 50)
 
-## Tools and Utilities
+### Error Handling
 
-### Web Scraping
+The module includes comprehensive error handling for:
+- API connection issues
+- Database connectivity problems
+- File I/O operations
+- Data validation
+- Environment configuration
 
-The `web-scrapping` tool is designed for scraping data from websites. It uses Selenium and BeautifulSoup for rendering and extracting content.
+## 3. Web Scraping Module
 
-#### Run the Web Scraper
+A robust and efficient web scraping tool that provides advanced features for extracting and processing web content.
 
-```bash
-cd web-scrapping
-python3 main.py
-```
+### Features
 
-### RAG (Retrieval-Augmented Generation)
+- 🌐 JavaScript-rendered page scraping
+- 🧹 Intelligent content cleaning
+- 📝 Markdown conversion
+- ⏱️ Time estimation and progress tracking
+- 📊 Content analysis and statistics
+- 🔄 Batch processing capabilities
+- 📁 Organized output management
 
-The `rag/` directory contains scripts for processing and embedding data for retrieval-augmented generation tasks.
+### Components
 
-#### Example Usage
+#### 1. Web Client (`WebClient`)
 
-- **Combine JSON files:**
+Handles web page retrieval:
+- Headless Chrome browser automation
+- JavaScript rendering
+- Anti-detection measures
+- Error handling
 
-  Combines multiple JSON files into a single deduplicated file.
+#### 2. HTML Cleaner (`HtmlCleaner`)
 
-  ```bash
-  python3 rag/combine-json.py
-  ```
+Processes and cleans web content:
+- Removes unwanted elements (ads, scripts, etc.)
+- Extracts metadata
+- Converts content to Markdown
+- Maintains content structure
 
-- **Embed Metadata:**
+#### 3. Web Scraper (`WebScraper`)
 
-  Generates embeddings for text data and stores metadata.
+Main scraping orchestration:
+- URL processing
+- Content extraction
+- File management
+- Progress tracking
 
-  ```bash
-  python3 rag/embed.py
-  ```
+### Output Structure
 
-- **Upload Records:**
+The scraper generates multiple output formats for each URL:
+- `.txt`: Full content with metadata
+- `.html`: Original HTML content
+- `.md`: Markdown version of the content
+- JSON summary of all scraped content
 
-  Uploads records to a vector database for retrieval tasks.
+### Content Cleaning
 
-  ```bash
-  python3 rag/upload_records.py
-  ```
+The HTML cleaner removes:
+- Scripts and styles
+- Images and SVGs
+- Headers and footers
+- Navigation elements
+- Ad-related content
 
-### Utilities
+### Best Practices
 
-The `utils/` directory contains helper scripts for file operations, logging, and time estimation.
+1. **Rate Limiting**
+   - Set appropriate delays between requests
+   - Respect robots.txt
+   - Use batch processing for large datasets
 
-#### Example Usage
+2. **Content Processing**
+   - Verify content extraction
+   - Check output formats
+   - Monitor file sizes
 
-- **File Processor:**
+3. **Resource Management**
+   - Close browser instances
+   - Clean up temporary files
+   - Monitor memory usage
 
-  Handles file operations like loading and saving JSON files.
+## 4. Utilities Module
 
-  ```bash
-  python3 utils/file_processor.py
-  ```
+A collection of essential utility tools and helpers used across the project.
 
-- **Logger:**
+### Features
 
-  Provides rich logging capabilities for debugging and monitoring.
+- ⏱️ Time estimation for long-running tasks
+- 📁 File system operations
+- 📝 Rich logging capabilities
+- 🔄 JSON data handling
+- 💾 Backup and restore functionality
 
-  ```bash
-  python3 utils/logger.py
-  ```
+### Components
 
-- **Time Estimator:**
+#### 1. Time Estimator (`time_estimator.py`)
 
-  Estimates the time required for iterative tasks.
+Provides time estimation for iterative tasks:
+- Progress tracking
+- Remaining time calculation
+- Iteration counting
+- Average processing time estimation
 
-  ```bash
-  python3 utils/time_estimator.py
-  ```
+#### 2. File System Processor (`file_processor.py`)
 
+Handles file operations:
+- JSON file loading and saving
+- File backup and restore
+- Directory management
+- Data validation
 
-## Notes
+#### 3. Logger (`logger.py`)
 
-- Follow the `.gitignore` rules to avoid committing unnecessary files (e.g., `__pycache__/`, `*.pyc`, `venv/`, etc.).
-- Backup your data files before running scripts that modify them.
-- Ensure all environment variables are set correctly for scripts requiring API keys or database connections.
+Rich logging capabilities:
+- Console output formatting
+- Log level management
+- Traceback handling
+- Custom formatting options
+
+### File Processor Options
+
+- `root_dir`: Base directory for operations
+- `process_subdirs`: Whether to process subdirectories
+- `backup`: Enable/disable automatic backups
+- `append_not_overwrite`: Append to existing files
+- `ensure_ascii`: ASCII encoding for JSON
+
+### Logger Settings
+
+- `rich_print_or_logs`: Output mode ('rich_print' or 'logs')
+- Log level: INFO, ERROR, WARNING, etc.
+- Custom formatting options
+
+### Best Practices
+
+1. **Time Estimation**
+   - Initialize with accurate iteration count
+   - Update processing time regularly
+   - Monitor for significant deviations
+
+2. **File Operations**
+   - Always use backup for critical files
+   - Validate JSON data before saving
+   - Handle encoding properly
+
+3. **Logging**
+   - Use appropriate log levels
+   - Include relevant context
+   - Format messages consistently
 
 ## Contributing
 
-Contributions are welcome! Please fork the repository and submit a pull request with your changes.
+Contributions are welcome! Please feel free to submit issues and pull requests.
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Author
+
+- **Mohamed Nagy** - [n4jidx@example.com](mailto:n4jidx@example.com)
+
+## Acknowledgments
+
+- OpenAI for the Whisper model
+- The open-source community for various tools and libraries
