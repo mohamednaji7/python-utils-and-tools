@@ -16,11 +16,12 @@ def test_writing_empty_files(base_directory, directory):
     Test creating directories and saving empty .txt files in the specified directory structure.
     """
     
-    console.print(os.listdir(os.path.join(base_directory, directory)))
     
     input_dir = os.path.join(base_directory, directory)
     test_directory = os.path.join(base_directory, directory + " Testing writing all the files")
     console = Console()
+    
+    console.print(os.listdir(os.path.join(base_directory, directory)))
 
     error_files = []  # To track files with errors
     total_files = 0  # To count total .mp4 files processed
