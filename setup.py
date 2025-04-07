@@ -9,7 +9,7 @@ def read_requirements(file_path):
         return [line.strip() for line in f if line.strip() and not line.startswith('#')]
 
 # Combine dependencies from all requirements.txt files
-install_requires = []
+all_deps = set()
 
 # # Root-level requirements (if exists)
 # try:
@@ -18,11 +18,11 @@ install_requires = []
 #     pass
 
 # rag requirements
-install_requires.extend(read_requirements('src/rag/requirements.txt'))
+all_deps.update(read_requirements('src/rag/requirements.txt'))
 # utils requirements
-install_requires.extend(read_requirements('src/utils/requirements.txt'))
+all_deps.update(read_requirements('src/utils/requirements.txt'))
 # transcribe requirements
-install_requires.extend(read_requirements('src/transcribe/requirements.txt'))
+all_deps.update(read_requirements('src/transcribe/requirements.txt'))
 
 setup(
     name="python-utils-and-tools",
@@ -36,5 +36,5 @@ setup(
     description="A collection of Python utilities and tools",
     long_description=open('README.md').read() if os.path.exists('README.md') else "",
     long_description_content_type="text/markdown",
-    install_requires=install_requires,
+    install_requires=list(all_deps),
 )
