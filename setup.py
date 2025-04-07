@@ -21,6 +21,8 @@ install_requires = []
 install_requires.extend(read_requirements('src/rag/requirements.txt'))
 # utils requirements
 install_requires.extend(read_requirements('src/utils/requirements.txt'))
+# transcribe requirements
+install_requires.extend(read_requirements('src/transcribe/requirements.txt'))
 
 setup(
     name="python-utils-and-tools",
