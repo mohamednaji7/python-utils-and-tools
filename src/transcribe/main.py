@@ -4,7 +4,7 @@ import os
 import time
 
 
-from utils import make_output_path
+from .utils import make_output_path
 
 
 from rich.console import Console

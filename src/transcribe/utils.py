@@ -23,8 +23,6 @@ def make_output_path(file_path: str, TRANSLATE: bool) -> str:
     
     return output_path
 
-
-
 def get_file_duration(file_path):
     """Get the duration of the audio or video file using ffprobe."""
     cmd = [
@@ -36,8 +34,6 @@ def get_file_duration(file_path):
     result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     duration = float(result.stdout.strip())
     return duration
-
-
 
 def has_audio_stream(file_path):
     """Check if the audio or video file has an audio stream."""

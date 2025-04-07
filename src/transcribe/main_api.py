@@ -3,7 +3,7 @@ from pydub import AudioSegment
 
 
 
-from utils import make_output_path
+from .utils import make_output_path
 
 
 import os
