@@ -1,3 +1,4 @@
 python-magic
 openai-whisper
 rich
+pydub

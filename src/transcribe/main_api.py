@@ -64,7 +64,7 @@ def convert_file_to_text(model, file_path, file_language, TRANSLATE, TIMESTAMP):
                 # model="gpt-4o-transcribe", 
                 model=model,
                 file=audio_file, 
-                response_format="text"
+                # response_format="text"
             )
             # result = transcription.text
             result += transcription.text + "\n"
