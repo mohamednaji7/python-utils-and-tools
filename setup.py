@@ -26,14 +26,17 @@ setup(
     name="python-utils-and-tools",
     version="0.1.0",
     package_dir={"pyut": "src"},  # Map the pyut package to the src directory
-    packages=["pyut", "pyut.rag", "pyut.utils"],  # Explicitly list the packages
-    install_requires=install_requires,
+    # packages=["pyut", "pyut.rag", "pyut.utils"],  # Explicitly list the packages
+packages=find_packages(where="src"),  # Dynamically find all packages in src    install_requires=install_requires,
     author="Mohamed Nagy",
     author_email="n4jidx@example.com",
     description="A collection of Python utilities and tools",
     long_description=open('README.md').read() if os.path.exists('README.md') else "",
     long_description_content_type="text/markdown",
 )
+
+# # download 
+# git clone https://github.com/mohamednaji7/python-utils-and-tools.git
 
 # # In main_dir
 # pip uninstall python-utils-and-tools -y
