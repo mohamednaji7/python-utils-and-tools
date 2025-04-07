@@ -16,7 +16,7 @@ def test_writing_empty_files(base_directory, directory):
     Test creating directories and saving empty .txt files in the specified directory structure.
     """
     
-    os.listdir(os.path.join(base_directory, directory))
+    console.print(os.listdir(os.path.join(base_directory, directory)))
     
     input_dir = os.path.join(base_directory, directory)
     test_directory = os.path.join(base_directory, directory + " Testing writing all the files")
@@ -157,3 +157,5 @@ def dir_tree_to_json(input_dir, json_data):
         json.dump(json_data, json_file, indent=2)
 
     print(f"JSON file has been created: {output_json}")
+    
+    return output_json 

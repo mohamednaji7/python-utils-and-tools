@@ -35,12 +35,3 @@ setup(
     long_description=open('README.md').read() if os.path.exists('README.md') else "",
     long_description_content_type="text/markdown",
 )
-
-# # download 
-# git clone https://github.com/mohamednaji7/python-utils-and-tools.git
-
-# # In main_dir
-# pip uninstall python-utils-and-tools -y
-
-# # In main_dir
-# pip install ./python-utils-and-tools

@@ -1,5 +1,5 @@
 
-from utils.logger import logger  # Import logger
+from .logger import logger  # Import logger
 import os
 import json
 

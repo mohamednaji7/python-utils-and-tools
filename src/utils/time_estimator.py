@@ -1,5 +1,5 @@
 import time
-from utils.logger import logger  # Import logger
+from .logger import logger  # Import logger
 
 class TimeEstimator:
     def __init__(self, number_of_iterations):
