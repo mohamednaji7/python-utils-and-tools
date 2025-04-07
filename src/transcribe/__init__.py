@@ -7,8 +7,6 @@ from .preprocess import (
     get_durations,
     get_names,
     check_files_states,
-    save_plot_file_durations,
-    
-    convert_to_text
-    
+    save_plot_file_durations,    
     )
+from .main import convert_to_text
