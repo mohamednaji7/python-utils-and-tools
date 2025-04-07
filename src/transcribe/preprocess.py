@@ -137,7 +137,7 @@ def dir_tree_to_json(input_dir, json_data, timestamp=True):
 
     output_json = input_dir + ' - videos.json'
 
-    add_dir_files_to_json(input_dir, file_language="en", translate=False, timestamp=True, json_data=json_data)
+    add_dir_files_to_json(input_dir, file_language="en", translate=False, timestamp=timestamp, json_data=json_data)
 
     # Write the JSON data to the output file
     with open(output_json, 'w') as json_file:
