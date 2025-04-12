@@ -3,6 +3,9 @@
 from setuptools import setup, find_packages
 import os
 
+# get os environment variable INSTALL_DEPENDENCIES
+INSTALL_DEPENDENCIES = os.environ.get("INSTALL_DEPENDENCIES")
+
 # Read dependencies from requirements.txt files
 def read_requirements(file_path):
     with open(file_path, 'r') as f:
@@ -17,12 +20,14 @@ all_deps = set()
 # except FileNotFoundError:
 #     pass
 
-# rag requirements
-all_deps.update(read_requirements('src/rag/requirements.txt'))
-# utils requirements
-all_deps.update(read_requirements('src/utils/requirements.txt'))
-# transcribe requirements
-all_deps.update(read_requirements('src/transcribe/requirements.txt'))
+if INSTALL_DEPENDENCIES:
+    # rag requirements
+    all_deps.update(read_requirements('src/rag/requirements.txt'))
+    # utils requirements
+    all_deps.update(read_requirements('src/utils/requirements.txt'))
+    # transcribe requirements
+    all_deps.update(read_requirements('src/transcribe/requirements.txt'))
+
 
 setup(
     name="python-utils-and-tools",

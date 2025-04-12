@@ -19,4 +19,5 @@ add_embedding(
 
 supabase_upload_records(
     'rag_data/output/records.json',
-    "new-websites-data")
+    "new-websites-data"
+    )

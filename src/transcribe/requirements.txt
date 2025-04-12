@@ -1,3 +1,7 @@
+--extra-index-url https://download.pytorch.org/whl/cu124
+torch==2.6.0
+torchvision
+torchaudio
 python-magic
 openai-whisper
 rich

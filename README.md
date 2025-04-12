@@ -6,11 +6,10 @@ A comprehensive collection of Python utilities and tools for various tasks inclu
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/python-utils-and-tools.git
-cd python-utils-and-tools
+git clone https://github.com/mohamednaji7/python-utils-and-tools.git
 
 # Install the package
-pip install -e .
+pip install -e python-utils-and-tools
 ```
 
 ## Quick Overview

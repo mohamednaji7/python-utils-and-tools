@@ -11,11 +11,10 @@ load_dotenv()
 
 # Fetch variables
 api_key = os.getenv("AZURE_OPENAI_KEY")
-MODEL = os.getenv("AZURE_OPENAI_MODELID")
 api_version = os.getenv("OPENAI_API_VERSION")
 endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
 
-if not (api_key and MODEL and api_version and endpoint):
+if not (api_key and api_version and endpoint):
     raise ValueError("ENV are not set")
 
 # Initialize the OpenAI client
@@ -38,19 +37,20 @@ client = AzureOpenAI(
 # print(type(files), len(files))
 # print(files[0].keys())
 
-def get_embeddings(txt, model):
-  embedding = client.embeddings.create(
-    model=model,
-    input=txt,
-    encoding_format="float" 
-  )
-  return embedding.data[0].embedding
+    
 
-# embedding = get_embeddings("Attenion is all you need", MODEL)
+def tokens_size(model, text):
 
-# print("embedding")
-# print(type(embedding))
-# print(len(embedding))
+    # Use tiktoken for more accurate token counting
+    encoding = tiktoken.encoding_for_model(model)
+    
+    # Tokenize the text
+    tokens = encoding.encode(text)
+
+    
+    return len(tokens)
+
+
 
 def chunk_text(model, text, max_tokens=500, overlap=50):
     """
@@ -75,24 +75,9 @@ def chunk_text(model, text, max_tokens=500, overlap=50):
         # Decode back to text
         chunk_text = encoding.decode(chunk_tokens)
         chunks.append(chunk_text)
-    
     return chunks
 
-def tokens_size(model, text):
-
-    # Use tiktoken for more accurate token counting
-    encoding = tiktoken.encoding_for_model(model)
-    
-    # Tokenize the text
-    tokens = encoding.encode(text)
-
-    
-    return len(tokens)
-
-
-
-
-def make_metdata(input_path, output_path):
+def make_metdata(input_path, output_path, model, max_tokens=500, overlap=50):
     print("Processing files...")
 
     files = fsp.load_json(input_path)
@@ -101,29 +86,28 @@ def make_metdata(input_path, output_path):
 
     for idx, file in enumerate(files):
         
-        text = file['main_content']
+        # file_path = file['path']
+        with open(file['path'], 'r') as f:
+            text = f.read()
+        
         # Chunk the text
-        chunks = chunk_text(MODEL, text)
+        chunks = chunk_text(model, text, max_tokens, overlap)
 
         for chunk_idx, chunk in enumerate(chunks):
             # Metadata to store with the vector
             metadata = {
-                'url': file['url'],
-                'domain': file['domain'],
-                'title': file['title'],
-                'description': file['description'],
-                'scrape_timestamp': file['scrape_timestamp'],
-                'category': file['cat'],
                 'original_doc_index': idx,
-                'doc_tokens_size': tokens_size(MODEL, text),
                 'chunk_idx': chunk_idx,
                 'chunk_content': chunk,
                 'number_of_chunks': len(chunks),
             }
+
+            for key, value in file['metadata'].items():
+                metadata[key] = value
             
             records_id_metadata.append(
                 {
-                    "record_id": str((metadata['url'], metadata['chunk_idx'])),
+                    "record_id": file['id'],
                     "metadata": metadata,
                 }
             )
@@ -135,7 +119,23 @@ def make_metdata(input_path, output_path):
 
 
 
-def add_embedding(records_id_metadata_path, records_path):
+def get_embeddings(txt, model):
+  embedding = client.embeddings.create(
+    model=model,
+    input=txt,
+    encoding_format="float" 
+  )
+  return embedding.data[0].embedding
+
+# embedding = get_embeddings("Attenion is all you need", MODEL)
+
+# print("embedding")
+# print(type(embedding))
+# print(len(embedding))
+
+
+
+def add_embedding(records_id_metadata_path, records_path, model):
     print("Making embeddings files...")
 
     records = []
@@ -153,7 +153,8 @@ def add_embedding(records_id_metadata_path, records_path):
         # Embed the chunk
         embedding = get_embeddings(
             record_id_metadata['metadata']['chunk_content'],
-            MODEL)
+            model
+            )
 
         records.append((
             record_id_metadata['record_id'],

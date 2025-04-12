@@ -24,23 +24,13 @@ DB_CONNECTION = f"postgresql://{user}:{password}@{host}:{port}/{dbname}"
 vx = vecs.create_client(DB_CONNECTION)
 
 
-def supabase_upload_records(records_path, doc_name):
-    dimension = 1536
+def supabase_upload_records(records_path, doc_name, dimension):
     docs = vx.get_or_create_collection(name=doc_name, dimension=dimension)
 
     docs.create_index(measure=vecs.IndexMeasure.cosine_distance)
 
     records = fsp.load_json(records_path)
     
-    # print(len(records))
-    # # print(records[0])
-    # print(type(records[0]))
-    # print(len(records[0]))
-    # print(type(records[0][0]))
-    # print(records[0][0])
-    # # print(records[0][1])
-    # print(records[0][2])
-    # docs.upsert([records[0]])
 
     # BATCH_SIZE = 2
     BATCH_SIZE = 128
