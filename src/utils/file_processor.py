@@ -68,6 +68,61 @@ class FileSystemProcessor:
 
 
     @staticmethod
+    def download_from_drive_shared_link(shared_link, output_dir):
+        """
+        Downloads a directory from Google Drive using a shareable link.
+        Works with folders that have been shared as zip files.
+        
+        Args:
+            shared_link (str): The Google Drive shareable link
+            output_dir (str, optional): Directory where to extract the downloaded content.
+                                        If None, uses the current directory.
+        
+        Returns:
+            str: Path to the downloaded directory
+        """
+        
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+        
+        # Temporary zip file path
+        temp_zip_path = os.path.join(output_dir, "temp_download.zip")
+        
+        print(f"Downloading from Google Drive...")
+        
+        # If it's a standard sharing link, convert it to the direct download link
+        if "drive.google.com/file/d/" in shared_link:
+            # Extract the file ID
+            file_id = shared_link.split("/d/")[1].split("/")[0]
+            # Use gdown to download the file
+            gdown.download(id=file_id, output=temp_zip_path, quiet=False)
+        
+        # If it's a folder sharing link
+        elif "drive.google.com/drive/folders/" in shared_link:
+            # Extract the folder ID
+            folder_id = shared_link.split("folders/")[1].split("?")[0]
+            # Download the folder as a zip file
+            gdown.download_folder(id=folder_id, output=output_dir, quiet=False)
+            print(f"Folder downloaded to {output_dir}")
+            return output_dir
+        
+        # If it's already a direct download link
+        else:
+            gdown.download(url=shared_link, output=temp_zip_path, quiet=False)
+        
+        # Extract the zip file if it was downloaded
+        if os.path.exists(temp_zip_path):
+            print(f"Extracting zip file...")
+            with zipfile.ZipFile(temp_zip_path, 'r') as zip_ref:
+                zip_ref.extractall(output_dir)
+            
+            # Remove the temporary zip file
+            os.remove(temp_zip_path)
+            print(f"Extraction complete. Files available at: {output_dir}")
+        
+        return output_dir
+
+    @staticmethod
     def backup_file(file_path):
         if os.path.exists(file_path):
             backup_path = f"{file_path}.backup"
