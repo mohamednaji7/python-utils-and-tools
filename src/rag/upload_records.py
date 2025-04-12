@@ -1,5 +1,5 @@
 import json 
-from utils import TimeEstimator, FileSystemProcessor as fsp
+from pyut.utils import TimeEstimator, FileSystemProcessor as fsp
 
 import os
 import vecs

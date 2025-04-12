@@ -3,7 +3,7 @@ import json
 from openai import AzureOpenAI
 import tiktoken
 
-from utils import TimeEstimator, FileSystemProcessor as fsp
+from pyut.utils import TimeEstimator, FileSystemProcessor as fsp
 
 from dotenv import load_dotenv
 # Load environment variables from .env file
@@ -107,7 +107,7 @@ def make_metdata(input_path, output_path, model, max_tokens=500, overlap=50):
             
             records_id_metadata.append(
                 {
-                    "record_id": file['id'],
+                    "record_id": f'{file['id']} - chuck_{chunk_idx}',
                     "metadata": metadata,
                 }
             )
