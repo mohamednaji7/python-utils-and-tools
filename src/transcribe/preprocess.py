@@ -105,44 +105,60 @@ def test_writing_empty_files(base_directory, directory):
 # # Test writing empty files
 # test_writing_empty_files(base_dir, videos_dir)
 
-
-
-
-def add_dir_files_to_json(input_dir, file_language, translate, timestamp, json_data):
-    # Walk through the MERE directory and subdirectories
-    for root, dirs, files in os.walk(input_dir):
-        for file in files:
-            # if file.endswith('.MP4') or file.endswith('.mp4'):
-            # if  file.endswith('.mp4'):
-
-            file_path = os.path.join(root, file)
-
-            if file.lower().endswith('.mp4') or 'video' in magic.from_file(file_path, mime=True):
-
-                # print(file_path)
-
-                file_entry = {
-                    "FILE_PATH": file_path,
-                    "FILE_LANGUAGE": file_language,  # You can adjust this based on your requirement
-                    "TRANSLATE": translate,
-                    "TIMESTAMP": timestamp
-                }
-                json_data["FILES"].append(file_entry)
-
-
-
-
-
-def dir_tree_to_json(input_dir, json_data, timestamp=True):
-
-    output_json = input_dir + ' - videos.json'
-
-    add_dir_files_to_json(input_dir, file_language="en", translate=False, timestamp=timestamp, json_data=json_data)
-
-    # Write the JSON data to the output file
-    with open(output_json, 'w') as json_file:
-        json.dump(json_data, json_file, indent=2)
-
-    print(f"JSON file has been created: {output_json}")
+def clean_timestamp_from_lines(input_dir, verbose=1):
+    """
+    Recursively processes all files in input_dir and its subdirectories.
+    For each file, cleans out timestamp patterns like '[102:15 - 102:20]' from the lines without removing the whole line.
+    Modifies files in-place.
     
-    return output_json 
+    Args:
+        input_dir (str): Path to the input directory containing transcription files
+    """
+    # Regular expression to match timestamp patterns like [102:15 - 102:20], [1:15 - 10:20]
+    timestamp_pattern = re.compile(r'\[\d+:\d+ - \d+:\d+\]')
+    
+    # Counters
+    files_cleaned = 0
+    files_processed = 0
+    total_files = 0
+    timestamps_cleaned = 0
+    
+    # Walk through all files and directories in the input directory
+    for root, dirs, files in os.walk(input_dir):
+        for filename in files:
+            file_path = os.path.join(root, filename)
+            total_files += 1
+            
+            try:
+                # Read the file content
+                with open(file_path, 'r', encoding='utf-8') as file:
+                    lines = file.readlines()
+                
+                # Clean out timestamps from each line
+                cleaned_lines = []
+                file_timestamps_cleaned = 0
+                
+                for line in lines:
+                    # Replace timestamp pattern with an empty string
+                    cleaned_line = timestamp_pattern.sub('', line)
+                    if cleaned_line != line:  # If a change was made
+                        file_timestamps_cleaned += 1
+                    cleaned_lines.append(cleaned_line.strip())
+                
+                # If any timestamps were cleaned, update counters and write back the file
+                if file_timestamps_cleaned > 0:
+                    with open(file_path, 'w', encoding='utf-8') as file:
+                        # file.writelines("\n".join(cleaned_lines)+"\n")
+                        file.writelines("\n".join(cleaned_lines))
+                    
+                    files_cleaned += 1
+                    timestamps_cleaned += file_timestamps_cleaned
+                    if verbose > 1: print(f"Processed {file_path}: Cleaned {file_timestamps_cleaned} timestamp occurrences")
+
+                files_processed += 1
+            except Exception as e:
+                print(f"Error processing {file_path}: {str(e)}")
+    
+    if verbose: print(f"Completed cleaning {files_cleaned} files. Total timestamps cleaned: {timestamps_cleaned}")
+    if verbose: print(f"Total files: {total_files}, Files processed: {files_processed}")
+

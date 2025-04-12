@@ -3,12 +3,39 @@ from .logger import logger  # Import logger
 import os
 import json
 import shutil
+import gdown
+import zipfile
 
 class FileSystemProcessor:
     def __init__(self, root_dir, process_subdirs=False):
         self.root_dir = root_dir
         self.process_subdirs = process_subdirs
 
+    @staticmethod
+
+    def unzip_file(zip_file_path, output_dir):
+        """
+        Unzips a .zip file to a specified directory.
+        
+        Args:
+            zip_file_path (str): Path to the zip file.
+            output_dir (str): Directory where the contents of the zip file will be extracted.
+        """
+        # Check if the zip file exists
+        if not os.path.exists(zip_file_path):
+            print(f"Error: The file {zip_file_path} does not exist.")
+            return
+        
+        # Create the output directory if it does not exist
+        os.makedirs(output_dir, exist_ok=True)
+
+        try:
+            with zipfile.ZipFile(zip_file_path, 'r') as zip_ref:
+                # Extract all the contents into the specified output directory
+                zip_ref.extractall(output_dir)
+                print(f"Successfully extracted {zip_file_path} to {output_dir}")
+        except Exception as e:
+            print(f"Error while extracting the file: {str(e)}")
     @staticmethod
     def copy_txt_files_preserving_directory_structure(input_dir, verbose=1):
         """
