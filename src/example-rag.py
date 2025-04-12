@@ -1,23 +1,36 @@
+import os
+from dotenv import load_dotenv
+# Load environment variables from .env file
+load_dotenv()
 
 
-from rag import (
+from pyut.rag.embed import (
     make_metdata,
-    add_embedding,
-    supabase_upload_records
+    add_embedding
 )
 
+from pyut.rag.upload_records import supabase_upload_records
+
+
+
+model = 'text-embedding-3-small'
+dimension = 1536
+
 make_metdata(
-    'rag_data/input/results_deduplicated.json',
-    'rag_data/output/records_id_metadata.json'      
+    'data/King Kong - Quantum  Growth.json',
+    'data/records_id_metadata.json',
+    model
 )
 
 
 add_embedding(
-    'rag_data/output/records_id_metadata.json' ,
-    'rag_data/output/records.json'      
+    'data/records_id_metadata.json' ,
+    'data/records.json' ,
+    model  
     )
 
 supabase_upload_records(
-    'rag_data/output/records.json',
-    "new-websites-data"
+    'data/records.json' ,
+    "king_kong_quantum_growth",
+    dimension
     )
