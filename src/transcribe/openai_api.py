@@ -1,11 +1,11 @@
 from openai import OpenAI
 from openai import AzureOpenAI
 from pydub import AudioSegment
-
+from pydub.exceptions import CouldntDecodeError
 
 
 from .utils import make_output_path
-
+from .utils import extract_audio
 
 import os
 import time
@@ -36,7 +36,7 @@ warnings.filterwarnings("ignore", category=UserWarning)
 
 
 
-def convert_file_to_text(model, file_path, file_language, TRANSLATE, TIMESTAMP):
+def convert_file_to_text(client, model, file_path, file_language, TRANSLATE, TIMESTAMP):
     """
     Transcribe or translate audio to text using Whisper and save the result.
     """
@@ -58,18 +58,28 @@ def convert_file_to_text(model, file_path, file_language, TRANSLATE, TIMESTAMP):
 
         console.print(f"[INFO] 🎙️ Transcribing {file_path}...", style="info")
 
+        try:
+            audio_segment = AudioSegment.from_file(file_path, 'mp4')
+        except CouldntDecodeError as e:
+            console.print(f"[ERROR] 🚫 CouldntDecodeError: ", style="error")
+            tmp_output_mp3 = file_path + ".tmp.mp3"
+            success = extract_audio(file_path, tmp_output_mp3)
+            if not success:
+                return
+            audio_segment = AudioSegment.from_mp3(tmp_output_mp3)
 
-        mp4_file = AudioSegment.from_file(file_path, "mp4")
+
         ten_minutes = 10 * 60 * 1000
         result = {"segments": []}
-        for i in range(0, len(mp4_file), ten_minutes):
+        file_audio_segment = f"{file_name}-ten_minutes.mp3"
+        for i in range(0, len(audio_segment), ten_minutes):
             # PyDub handles time in milliseconds
 
-            audio_10_minutes = mp4_file[:ten_minutes]
+            audio_10_minutes = audio_segment[:ten_minutes]
 
-            audio_10_minutes.export(f"{file_name}-ten_minutes.mp3", format="mp3")
+            audio_10_minutes.export(file_audio_segment, format="mp3")
 
-            audio_file = open(f"{file_name}-ten_minutes.mp3", "rb")
+            audio_file = open(file_audio_segment, "rb")
 
             transcription = client.audio.transcriptions.create(
                 # model="gpt-4o-transcribe", 
@@ -79,6 +89,14 @@ def convert_file_to_text(model, file_path, file_language, TRANSLATE, TIMESTAMP):
             )
             # result = transcription.text
             result['segments'].append({"text": transcription.text})
+
+        if os.path.exists(file_audio_segment):
+            os.remove(file_audio_segment)
+
+        # delete the tmp_output_mp3
+        if os.path.exists(tmp_output_mp3):
+            os.remove(tmp_output_mp3)
+
 
     else:
         raise ValueError("Translation is not supported in this version.")
@@ -126,7 +144,7 @@ def convert_to_text(videos_json, provider="openai"):
     # Process files sequentially
     for i, file in enumerate(files):
         console.print(f"\n[PROCESSING] 📁 File {i+1}/{len(files)}", style="processing")
-        convert_file_to_text(model_name, file['FILE_PATH'], file['FILE_LANGUAGE'], file['TRANSLATE'], file['TIMESTAMP'])
+        convert_file_to_text(client, model_name, file['FILE_PATH'], file['FILE_LANGUAGE'], file['TRANSLATE'], file['TIMESTAMP'])
 
     end_time = time.time()
     elapsed_time = end_time - start_time

@@ -7,6 +7,17 @@ import sys
 import matplotlib.pyplot as plt
 from matplotlib.patches import Patch
 
+def extract_audio(mp4_file_path, output_mp3):
+    try:
+        subprocess.run([
+            "ffmpeg", "-y", "-i", mp4_file_path, "-vn", "-acodec", "mp3", output_mp3
+        ], check=True, capture_output=True, text=True)
+        print('Done extract_audio, return True')
+        return True
+    except subprocess.CalledProcessError as e:
+        print(f"[ERROR] 🚫 FFmpeg failed: {e.stderr}")
+        return False
+
 def make_output_path(file_path: str, TRANSLATE: bool) -> str:
     """
     Create the output path for the transcription or translation file.
