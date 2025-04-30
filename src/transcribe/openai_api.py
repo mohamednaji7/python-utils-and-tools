@@ -58,11 +58,11 @@ def convert_file_to_text(client, model, file_path, file_language, TRANSLATE, TIM
 
         console.print(f"[INFO] 🎙️ Transcribing {file_path}...", style="info")
 
+        tmp_output_mp3 = file_path + ".tmp.mp3"
         try:
             audio_segment = AudioSegment.from_file(file_path, 'mp4')
         except CouldntDecodeError as e:
             console.print(f"[ERROR] 🚫 CouldntDecodeError: ", style="error")
-            tmp_output_mp3 = file_path + ".tmp.mp3"
             success = extract_audio(file_path, tmp_output_mp3)
             if not success:
                 return
@@ -96,7 +96,6 @@ def convert_file_to_text(client, model, file_path, file_language, TRANSLATE, TIM
         # delete the tmp_output_mp3
         if os.path.exists(tmp_output_mp3):
             os.remove(tmp_output_mp3)
-
 
     else:
         raise ValueError("Translation is not supported in this version.")
