@@ -162,3 +162,44 @@ def clean_timestamp_from_lines(input_dir, verbose=1):
     if verbose: print(f"Completed cleaning {files_cleaned} files. Total timestamps cleaned: {timestamps_cleaned}")
     if verbose: print(f"Total files: {total_files}, Files processed: {files_processed}")
 
+
+
+
+def add_dir_files_to_json(input_dir, file_language, translate, timestamp, json_data):
+    # Walk through the MERE directory and subdirectories
+    for root, dirs, files in os.walk(input_dir):
+        for file in files:
+            # if file.endswith('.MP4') or file.endswith('.mp4'):
+            # if  file.endswith('.mp4'):
+
+            file_path = os.path.join(root, file)
+
+            if file.lower().endswith('.mp4') or 'video' in magic.from_file(file_path, mime=True):
+
+                # print(file_path)
+
+                file_entry = {
+                    "FILE_PATH": file_path,
+                    "FILE_LANGUAGE": file_language,  # You can adjust this based on your requirement
+                    "TRANSLATE": translate,
+                    "TIMESTAMP": timestamp
+                }
+                json_data["FILES"].append(file_entry)
+
+
+
+
+
+def dir_tree_to_json(input_dir, json_data, timestamp=True):
+
+    output_json = input_dir + ' - videos.json'
+
+    add_dir_files_to_json(input_dir, file_language="en", translate=False, timestamp=timestamp, json_data=json_data)
+
+    # Write the JSON data to the output file
+    with open(output_json, 'w') as json_file:
+        json.dump(json_data, json_file, indent=2)
+
+    print(f"JSON file has been created: {output_json}")
+    
+    return output_json 
