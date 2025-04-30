@@ -1,4 +1,5 @@
 from openai import OpenAI
+from openai import AzureOpenAI
 from pydub import AudioSegment
 
 
@@ -21,7 +22,12 @@ custom_theme = Theme({
     "time": "magenta"
 })
 console = Console(theme=custom_theme)
-client = OpenAI()
+openai = OpenAI()
+azure_openai = AzureOpenAI(
+    azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
+    api_key=os.getenv("AZURE_OPENAI_API_KEY"),
+    api_version="2025-03-01-preview"
+)
 
 # Suppress specific warnings
 import warnings
@@ -101,11 +107,19 @@ def convert_file_to_text(model, file_path, file_language, TRANSLATE, TIMESTAMP):
     else:
         console.print(f"[SUCCESS] ✅ Output without timestamps saved to: {output_path}", style="success")
 
-def convert_to_text(videos_json):
+def convert_to_text(videos_json, provider="openai"):
+    if provider == 'openai':
+        client = openai
+    elif provider == 'azure':
+        client = azure_openai
+    else:
+        raise ValueError("Invalid provider. Use 'openai' or 'azure'.")
+    
+    
     files = videos_json['FILES']
     model_name = videos_json['MODEL']
     
-    console.print(f"⬇️ Using model {model_name}", style="info")
+    console.print(f"⬇Using model {model_name}", style="info")
 
     start_time = time.time()
 
