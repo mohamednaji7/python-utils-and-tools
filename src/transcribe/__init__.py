@@ -13,5 +13,3 @@ from .utils import (
     check_files_states,
     save_plot_file_durations,    
     )
-
-from .main import convert_to_text
