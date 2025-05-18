@@ -18,7 +18,7 @@ def extract_audio(mp4_file_path, output_mp3):
         print(f"[ERROR] 🚫 FFmpeg failed: {e.stderr}")
         return False
 
-def make_output_path(file_path: str, TRANSLATE: bool) -> str:
+def make_output_path(file_path: str, TRANSLATE: bool, postfix: str = '') -> str:
     """
     Create the output path for the transcription or translation file.
     """
@@ -30,9 +30,9 @@ def make_output_path(file_path: str, TRANSLATE: bool) -> str:
 
     file_name = os.path.splitext(os.path.basename(file_path))[0]
     file_dir = os.path.dirname(file_path)
-    output_path = os.path.join(file_dir, f"{file_name}_transcription{'_translation' if TRANSLATE else ''}.txt")
-    
-    return output_path
+    if(not postfix):
+        postfix = f"_transcription{'_translation' if TRANSLATE else ''}"
+    return os.path.join(file_dir, f"{file_name}{postfix}.txt")
 
 def get_file_duration(file_path):
     """Get the duration of the audio or video file using ffprobe."""

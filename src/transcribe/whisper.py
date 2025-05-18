@@ -26,10 +26,17 @@ import warnings
 warnings.filterwarnings("ignore", category=FutureWarning)
 warnings.filterwarnings("ignore", category=UserWarning)
 
-def convert_file_to_text(model, file_path, file_language, TRANSLATE, TIMESTAMP):
+def convert_file_to_text(model, file):
     """
     Transcribe or translate audio to text using Whisper and save the result.
     """
+    file_path = file['FILE_PATH']
+    file_language = file['FILE_LANGUAGE']
+    TRANSLATE = file['TRANSLATE']
+    TIMESTAMP = file['TIMESTAMP']
+    OVEWRITE_EXISTING_FILES = file.get('OVERWRITE_EXISTING_FILE', False)
+    OUTPUT_FILE_NAME_POSTFIX = file.get('OUTPUT_FILE_NAME_POSTFIX', '')
+
     # Check if file exists
     if not os.path.exists(file_path):
         console.print(f"[ERROR] 🚫 File not found: {file_path}", style="error")
@@ -39,19 +46,16 @@ def convert_file_to_text(model, file_path, file_language, TRANSLATE, TIMESTAMP):
     file_dir = os.path.dirname(file_path)
 
     # Perform transcription or translation
-    output_path = make_output_path(file_path, TRANSLATE)
-    if not TRANSLATE:
-        if os.path.isfile(output_path):
-            console.print(f"[SKIP] ⏭️ Transcription already exists: {output_path}", style="skip")
-            return
+    output_path = make_output_path(file_path, TRANSLATE, OUTPUT_FILE_NAME_POSTFIX)
 
+    if os.path.isfile(output_path) and not OVEWRITE_EXISTING_FILES:
+        console.print(f"[SKIP] ⏭️ output file already exists: {output_path}", style="skip")
+        return
+    
+    if not TRANSLATE:
         console.print(f"[INFO] 🎙️ Transcribing {file_path}...", style="info")
         result = model.transcribe(file_path, language=file_language)
     else:
-        if os.path.isfile(output_path):
-            console.print(f"[SKIP] ⏭️ Translation already exists: {output_path}", style="skip")
-            return
-
         console.print(f"[INFO] 🌐 Translating {file_path} from {file_language} to English...", style="info")
         result = model.transcribe(file_path, language=file_language, task='translate')
 
@@ -87,7 +91,7 @@ def convert_to_text(videos_json):
     # Process files sequentially
     for i, file in enumerate(files):
         console.print(f"\n[PROCESSING] 📁 File {i+1}/{len(files)}", style="processing")
-        convert_file_to_text(model, file['FILE_PATH'], file['FILE_LANGUAGE'], file['TRANSLATE'], file['TIMESTAMP'])
+        convert_file_to_text(model, file)
 
     end_time = time.time()
     elapsed_time = end_time - start_time
