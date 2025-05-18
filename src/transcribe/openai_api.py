@@ -75,7 +75,8 @@ def convert_file_to_text(client, model, file_path, file_language, TRANSLATE, TIM
         for i in range(0, len(audio_segment), ten_minutes):
             # PyDub handles time in milliseconds
 
-            audio_10_minutes = audio_segment[:ten_minutes]
+            #  subset 10 minutes audio not the first 10 minutes
+            audio_10_minutes = audio_segment[i:i + ten_minutes]
 
             audio_10_minutes.export(file_audio_segment, format="mp3")
 
