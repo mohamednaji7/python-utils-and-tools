@@ -22,12 +22,6 @@ custom_theme = Theme({
     "time": "magenta"
 })
 console = Console(theme=custom_theme)
-openai = OpenAI()
-azure_openai = AzureOpenAI(
-    azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
-    api_key=os.getenv("AZURE_OPENAI_API_KEY"),
-    api_version="2025-03-01-preview"
-)
 
 # Suppress specific warnings
 import warnings
@@ -134,9 +128,13 @@ def convert_file_to_text(client, model, file ):
 
 def convert_to_text(videos_json, provider="openai"):
     if provider == 'openai':
-        client = openai
+        client = OpenAI()
     elif provider == 'azure':
-        client = azure_openai
+        client = AzureOpenAI(
+            azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
+            api_key=os.getenv("AZURE_OPENAI_API_KEY"),
+            api_version="2025-03-01-preview"
+        )
     else:
         raise ValueError("Invalid provider. Use 'openai' or 'azure'.")
     
